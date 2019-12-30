@@ -326,7 +326,7 @@ export class MusicController extends ODataController {
 export class ProductsController extends ODataController {
     @odata.GET
     find( @odata.query query: Token) {
-        const filter = query && query.value && query.value.options && query.value.options.find(t => t.type == "Filter");
+        const filter = query && query.value && query.value.options && query.value.options.find(t => t ? t.type == "Filter" : false);
         if (filter){
             return products
                 .map((product) => Object.assign({}, product, { _id: product._id.toString(), CategoryId: product.CategoryId && product.CategoryId.toString() }))

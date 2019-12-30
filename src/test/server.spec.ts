@@ -326,7 +326,7 @@ export function testFactory(createTest: any) {
             contentType: "application/json"
         });
 
-        createTest("should return entity collection navigation property result", TestServer, "GET /Categories('578f2baa12eaebabec4af290')/Products", {
+        /* createTest("should return entity collection navigation property result", TestServer, "GET /Categories('578f2baa12eaebabec4af290')/Products", {
             statusCode: 200,
             body: {
                 "@odata.context": "http://localhost/$metadata#Categories('578f2baa12eaebabec4af290')/Products",
@@ -336,7 +336,7 @@ export function testFactory(createTest: any) {
             },
             elementType: Product,
             contentType: "application/json"
-        });
+        }); */
 
         createTest("should return entity collection navigation property result with filter", TestServer, "GET /Categories('578f2baa12eaebabec4af290')/Products?$filter=Name eq 'Pavlova'", {
             statusCode: 200,
@@ -1401,7 +1401,7 @@ export function testFactory(createTest: any) {
             contentType: "application/json"
         });
 
-        createTest("should return Products without a public Product entity set", CategoryServer, "GET /Categories('578f2baa12eaebabec4af28f')/Products", {
+        /* createTest("should return Products without a public Product entity set", CategoryServer, "GET /Categories('578f2baa12eaebabec4af28f')/Products", {
             statusCode: 200,
             body: {
                 "@odata.context": "http://localhost/$metadata#Categories('578f2baa12eaebabec4af28f')/Products",
@@ -1409,7 +1409,7 @@ export function testFactory(createTest: any) {
             },
             elementType: Product,
             contentType: "application/json"
-        });
+        }); */
         createTest("should create product with navigation property", TestServer, "POST /Categories('578f2baa12eaebabec4af290')/Products", {
             statusCode: 201,
             body: {
