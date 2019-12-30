@@ -306,11 +306,15 @@ export class MusicController extends ODataController {
         return music;
     }
 
-    @odata.GET.$value
+    /* @odata.GET.$value
     mp3( @odata.key _: number, @odata.context context: ODataHttpContext) {
-        globalReadableMediaStrBuffer.put(globalWritableMediaStrBuffer.getContents());
-        return globalReadableMediaStrBuffer.pipe(<Writable>context.response);
-    }
+        const contents = globalWritableMediaStrBuffer.getContents()
+        if (contents){
+            globalReadableMediaStrBuffer.put(contents);
+            return globalReadableMediaStrBuffer.pipe(<Writable>context.response);
+        }
+        
+    } */
 
     @odata.POST.$value
     post( @odata.key _: number, @odata.body upload: Readable) {
