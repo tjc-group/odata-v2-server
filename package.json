@@ -21,7 +21,7 @@
     "test:metadata": "nyc mocha --reporter mochawesome --reporter-options reportDir=report,reportName=odata-v4-server,reportTitle=\"OData V4 Server\" src/test/**/metadata.spec.ts",
     "test:validator": "nyc mocha --reporter mochawesome --reporter-options reportDir=report,reportName=odata-v4-server,reportTitle=\"OData V4 Server\" src/test/**/validator.spec.ts",
     "test:projection": "nyc mocha --reporter mochawesome --reporter-options reportDir=report,reportName=odata-v4-server,reportTitle=\"OData V4 Server\" src/test/**/projection.spec.ts",
-    "prepare": "npm test && npm run build",
+    "prepare": "npm run build",
     "typedoc": "rimraf docs && typedoc --name \"JayStack OData v4 Server\" --exclude \"**/?(utils|index).ts\" --excludeExternals --excludeNotExported --hideGenerator --excludePrivate --out docs src/lib"
   },
   "watch": {
