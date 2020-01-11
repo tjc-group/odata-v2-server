@@ -5,8 +5,12 @@
   "main": "build/lib/index.js",
   "typings": "build/lib/index",
   "scripts": {
+    "install": "npm install",
     "postinstall": "npm run build",
-    "build": "tsc",
+    "prebuild": "rimraf build",
+    "build": "npm run tsc",
+    "pretsc": "npm run lint",
+    "tsc": "tsc",
     "prewatch": "rimraf build",
     "watch": "npm-watch",
     "es6": "copyfiles -u 1 src/**/*.js build",
@@ -19,6 +23,7 @@
     "test:metadata": "nyc mocha --reporter mochawesome --reporter-options reportDir=report,reportName=odata-v4-server,reportTitle=\"OData V4 Server\" src/test/**/metadata.spec.ts",
     "test:validator": "nyc mocha --reporter mochawesome --reporter-options reportDir=report,reportName=odata-v4-server,reportTitle=\"OData V4 Server\" src/test/**/validator.spec.ts",
     "test:projection": "nyc mocha --reporter mochawesome --reporter-options reportDir=report,reportName=odata-v4-server,reportTitle=\"OData V4 Server\" src/test/**/projection.spec.ts",
+    "prepare": "npm test && npm run build",
     "typedoc": "rimraf docs && typedoc --name \"JayStack OData v4 Server\" --exclude \"**/?(utils|index).ts\" --excludeExternals --excludeNotExported --hideGenerator --excludePrivate --out docs src/lib"
   },
   "watch": {
@@ -130,7 +135,7 @@
     "typedoc": "^0.11.1",
     "typedoc-default-themes": "^0.5.0",
     "typedoc-plugin-external-module-name": "^1.1.1",
-    "typescript": "^3.7.4",
+    "typescript": "^2.9.2",
     "xml-beautifier": "^0.4.0"
   }
 }
