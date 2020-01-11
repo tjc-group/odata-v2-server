@@ -5,7 +5,6 @@
   "main": "build/lib/index.js",
   "typings": "build/lib/index",
   "scripts": {
-    "install": "npm install",
     "postinstall": "npm run build",
     "build": "tsc",
     "prewatch": "rimraf build",
