@@ -1,6 +1,6 @@
 {
   "name": "thelenilson-odata-v4",
-  "version": "0.2.13",
+  "version": "0.2.14",
   "description": "OData V4 Server",
   "main": "build/lib/index.js",
   "typings": "build/lib/index",
