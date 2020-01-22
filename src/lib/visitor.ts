@@ -1,4 +1,4 @@
-import { Token, TokenType } from "odata-v4-parser/lib/lexer";
+import { Token, TokenType } from "thelenilson-odata-v4-parser/lib/lexer";
 import { Literal } from "odata-v4-literal";
 import * as qs from "qs";
 import { ODataServer } from "./server";

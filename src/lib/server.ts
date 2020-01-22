@@ -1,8 +1,8 @@
 import { ServiceMetadata } from "odata-v4-service-metadata";
 import { ServiceDocument } from "odata-v4-service-document";
 import { Edm as Metadata } from "odata-v4-metadata";
-import * as ODataParser from "odata-v4-parser";
-import { Token, TokenType } from "odata-v4-parser/lib/lexer";
+import * as ODataParser from "thelenilson-odata-v4-parser";
+import { Token, TokenType } from "thelenilson-odata-v4-parser/lib/lexer";
 import * as express from "express";
 import * as http from "http";
 import * as bodyParser from "body-parser";

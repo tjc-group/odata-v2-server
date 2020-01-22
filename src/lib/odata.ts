@@ -1,5 +1,5 @@
 import "reflect-metadata";
-import { Token, TokenType } from "odata-v4-parser/lib/lexer";
+import { Token, TokenType } from "thelenilson-odata-v4-parser/lib/lexer";
 import { ErrorRequestHandler } from "express";
 import { ODataServer } from "./server";
 import { ODataController } from "./controller";
@@ -75,7 +75,7 @@ export function container(name: string) {
 }
 
 /** Set parser
- * @param parser Parser to use (odata-v4-parser compatible functional parser)
+ * @param parser Parser to use (thelenilson-odata-v4-parser compatible functional parser)
  */
 export function parser(parser: any) {
     return function (target: typeof ODataServer) {
