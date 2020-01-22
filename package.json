@@ -87,7 +87,7 @@
     "express": "^4.16.3",
     "odata-v4-literal": "^0.1.1",
     "odata-v4-metadata": "^0.1.5",
-    "odata-v4-parser": "git+https://github.com/thelenilson/odata-v4-parser#049794264d87297827d7cc7a45c20d8ebf7e197c",
+    "odata-v4-parser": "https://github.com/thelenilson/odata-v4-parser.git#049794264d87297827d7cc7a45c20d8ebf7e197c",
     "odata-v4-service-document": "0.0.3",
     "odata-v4-service-metadata": "^0.1.6",
     "qs": "^6.5.2",
