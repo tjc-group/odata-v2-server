@@ -1,6 +1,6 @@
 {
   "name": "thelenilson-odata-v4",
-  "version": "0.2.18",
+  "version": "0.2.19",
   "description": "OData V4 Server",
   "main": "build/lib/index.js",
   "typings": "build/lib/index",
@@ -87,7 +87,7 @@
     "express": "^4.16.3",
     "odata-v4-literal": "^0.1.1",
     "odata-v4-metadata": "^0.1.5",
-    "odata-v4-parser": "^0.1.29",
+    "odata-v4-parser": "https://github.com/thelenilson/odata-v4-parser.git#3ee97559f4ac758304ac2702f3603acecea8397b",
     "odata-v4-service-document": "0.0.3",
     "odata-v4-service-metadata": "^0.1.6",
     "qs": "^6.5.2",
