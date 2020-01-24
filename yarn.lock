@@ -3067,14 +3067,9 @@ odata-v4-mongodb@^0.1.12:
     odata-v4-literal "^0.1.0"
     odata-v4-parser "^0.1.18"
 
-odata-v4-parser@^0.1.18, odata-v4-parser@^0.1.9:
+odata-v4-parser@^0.1.18, odata-v4-parser@^0.1.9, "odata-v4-parser@https://github.com/thelenilson/odata-v4-parser.git#5678b06badf3dca418de3c05d4df5f17b9d78198":
   version "0.1.29"
-  resolved "https://registry.yarnpkg.com/odata-v4-parser/-/odata-v4-parser-0.1.29.tgz#49e466037dbc4fc088572a2deae822fc14e6c137"
-  integrity sha512-7ZsqxcMbGAqKSBme0+lul7g9K52RadGYU3WvYwDdduJNfnduSL59w4OEskvEzWHZMcPRqPnD9XtuO7Rpl+B3jA==
-
-"odata-v4-parser@https://github.com/thelenilson/odata-v4-parser.git#3ee97559f4ac758304ac2702f3603acecea8397b":
-  version "0.1.31"
-  resolved "https://github.com/thelenilson/odata-v4-parser.git#3ee97559f4ac758304ac2702f3603acecea8397b"
+  resolved "https://github.com/thelenilson/odata-v4-parser.git#5678b06badf3dca418de3c05d4df5f17b9d78198"
 
 odata-v4-service-document@0.0.3:
   version "0.0.3"
