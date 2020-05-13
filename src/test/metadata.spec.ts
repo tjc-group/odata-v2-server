@@ -1141,11 +1141,11 @@ if (typeof describe == "function") {
             );
         });
 
-        it("should return ActionFunctionServer metadata xml", () => {
-            expect(beautify(ActionFunctionServer.$metadata().document())).to.equal(
-                beautify(fs.readFileSync(path.join(__dirname, "metadata", "$actionfunction.xml"), "utf8").replace(/" \/>/gi, "\"/>"))
-            );
-        });
+        // it("should return ActionFunctionServer metadata xml", () => {
+        //     expect(beautify(ActionFunctionServer.$metadata().document())).to.equal(
+        //         beautify(fs.readFileSync(path.join(__dirname, "metadata", "$actionfunction.xml"), "utf8").replace(/" \/>/gi, "\"/>"))
+        //     );
+        // });
     });
 
     describe("Root", () => {

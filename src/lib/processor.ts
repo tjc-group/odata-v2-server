@@ -1619,7 +1619,7 @@ export class ODataProcessor extends Transform {
             let filterAst = queryString;
             let resourceFilterAst = this.resourcePath.ast.value.query && this.resourcePath.ast.value.query.value.options && this.resourcePath.ast.value.query.value.options.find(t => t.type == TokenType.Filter);
             if (typeof filterAst == "string") {
-                filterAst = qs.parse(filterAst).$filter;
+                filterAst = qs.parse(filterAst).$filter as string;
                 if (typeof filterAst == "string") {
                     filterAst = this.serverType.parser.filter(filterAst, { metadata: this.resourcePath.ast.metadata || this.serverType.$metadata().edmx });
                     const lastNavigationPath = this.resourcePath.navigation[this.resourcePath.navigation.length - 1];

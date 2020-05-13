@@ -1,7 +1,7 @@
 {
-  "name": "thelenilson-odata-v4",
-  "version": "0.2.22",
-  "description": "OData V4 Server",
+  "name": "@tjc-group/odata-v2-server",
+  "version": "0.0.1",
+  "description": "OData V2 Server - downgrade from V4 of Jaystack",
   "main": "build/lib/index.js",
   "typings": "build/lib/index",
   "scripts": {
@@ -12,13 +12,13 @@
     "es6": "copyfiles -u 1 src/**/*.js build",
     "lint": "tslint src/lib/**/*.ts -t verbose --force > .tslint",
     "pretest": "rimraf report && rimraf coverage",
-    "test": "nyc mocha --reporter mochawesome --reporter-options reportDir=report,reportName=odata-v4-server,reportTitle=\"OData V4 Server\" src/test/**/*.spec.ts",
-    "test:http": "nyc mocha --reporter mochawesome --reporter-options reportDir=report,reportName=odata-v4-server,reportTitle=\"OData V4 Server\" src/test/**/http.spec.ts",
-    "test:execute": "nyc mocha --reporter mochawesome --reporter-options reportDir=report,reportName=odata-v4-server,reportTitle=\"OData V4 Server\" src/test/**/execute.spec.ts",
-    "test:stream": "nyc mocha --reporter mochawesome --reporter-options reportDir=report,reportName=odata-v4-server,reportTitle=\"OData V4 Server\" src/test/**/stream.spec.ts",
-    "test:metadata": "nyc mocha --reporter mochawesome --reporter-options reportDir=report,reportName=odata-v4-server,reportTitle=\"OData V4 Server\" src/test/**/metadata.spec.ts",
-    "test:validator": "nyc mocha --reporter mochawesome --reporter-options reportDir=report,reportName=odata-v4-server,reportTitle=\"OData V4 Server\" src/test/**/validator.spec.ts",
-    "test:projection": "nyc mocha --reporter mochawesome --reporter-options reportDir=report,reportName=odata-v4-server,reportTitle=\"OData V4 Server\" src/test/**/projection.spec.ts",
+    "test": "nyc mocha --reporter mochawesome --reporter-options reportDir=report,reportName=odata-v4-server,reportTitle=\"OData V2 Server\" src/test/**/*.spec.ts",
+    "test:http": "nyc mocha --reporter mochawesome --reporter-options reportDir=report,reportName=odata-v4-server,reportTitle=\"OData V2 Server\" src/test/**/http.spec.ts",
+    "test:execute": "nyc mocha --reporter mochawesome --reporter-options reportDir=report,reportName=odata-v4-server,reportTitle=\"OData V2 Server\" src/test/**/execute.spec.ts",
+    "test:stream": "nyc mocha --reporter mochawesome --reporter-options reportDir=report,reportName=odata-v4-server,reportTitle=\"OData V2 Server\" src/test/**/stream.spec.ts",
+    "test:metadata": "nyc mocha --reporter mochawesome --reporter-options reportDir=report,reportName=odata-v4-server,reportTitle=\"OData V2 Server\" src/test/**/metadata.spec.ts",
+    "test:validator": "nyc mocha --reporter mochawesome --reporter-options reportDir=report,reportName=odata-v4-server,reportTitle=\"OData V2 Server\" src/test/**/validator.spec.ts",
+    "test:projection": "nyc mocha --reporter mochawesome --reporter-options reportDir=report,reportName=odata-v4-server,reportTitle=\"OData V2 Server\" src/test/**/projection.spec.ts",
     "prepare": "npm run build",
     "typedoc": "rimraf docs && typedoc --name \"JayStack OData v4 Server\" --exclude \"**/?(utils|index).ts\" --excludeExternals --excludeNotExported --hideGenerator --excludePrivate --out docs src/lib"
   },
@@ -73,9 +73,9 @@
   "author": "JayStack",
   "license": "MIT",
   "bugs": {
-    "url": "https://github.com/jaystack/odata-v4-server/issues"
+    "url": "https://github.com/tjc-group/odata-v2-server/issues"
   },
-  "homepage": "https://github.com/thelenilson/odata-v4-server#readme",
+  "homepage": "https://github.com/tjc-group/odata-v2-server#readme",
   "dependencies": {
     "@types/body-parser": "1.17.0",
     "@types/cors": "2.8.4",
@@ -87,9 +87,9 @@
     "express": "^4.16.3",
     "odata-v4-literal": "^0.1.1",
     "odata-v4-metadata": "^0.1.5",
-    "odata-v4-parser": "https://github.com/thelenilson/odata-v4-parser.git#5678b06badf3dca418de3c05d4df5f17b9d78198",
+    "@tjc-group/odata-v2-parser": "^0.0.1",
     "odata-v4-service-document": "0.0.3",
-    "odata-v4-service-metadata": "^0.1.6",
+    "@tjc-group/odata-v2-service-metadata": "^0.0.1",
     "qs": "^6.5.2",
     "reflect-metadata": "^0.1.12",
     "tslib": "^1.9.3"

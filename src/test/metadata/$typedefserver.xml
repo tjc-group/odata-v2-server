@@ -1,23 +1,21 @@
-<?xml version="1.0" encoding="UTF-8"?>
-<edmx:Edmx xmlns:edmx="http://docs.oasis-open.org/odata/ns/edmx" Version="4.0">
-    <edmx:DataServices>
-        <Schema xmlns="http://docs.oasis-open.org/odata/ns/edm" Namespace="Controller">
-            <EntityContainer Name="Default">
-                <EntitySet Name="SimpleEntity" EntityType="Default.SimpleEntity" />
-            </EntityContainer>
+<?xml version="1.0" encoding="utf-8" standalone="yes"?>
+<edmx:Edmx xmlns:edmx="http://schemas.microsoft.com/ado/2007/06/edmx" Version="1.0">
+    <m:DataServices xmlns:m="http://schemas.microsoft.com/ado/2007/08/dataservices/metadata" DataServiceVersion="2.0">
+        <Schema xmlns:d="http://schemas.microsoft.com/ado/2007/08/dataservices" xmlns:m="http://schemas.microsoft.com/ado/2007/08/dataservices/metadata" xmlns="http://schemas.microsoft.com/ado/2008/09/edm" Namespace="Controller">
         </Schema>
-        <Schema xmlns="http://docs.oasis-open.org/odata/ns/edm" Namespace="Default">
+        <Schema xmlns:d="http://schemas.microsoft.com/ado/2007/08/dataservices" xmlns:m="http://schemas.microsoft.com/ado/2007/08/dataservices/metadata" xmlns="http://schemas.microsoft.com/ado/2008/09/edm" Namespace="Default">
             <EntityType Name="SimpleEntity">
                 <Key>
-                    <PropertyRef Name="MongoId" />
+                    <PropertyRef Name="MongoId"/>
                 </Key>
                 <Property Name="MongoId" Type="Simple.ObjectID" Nullable="false">
-                    <Annotation Term="Org.OData.Core.V1.Computed" Bool="true" />
+                    <Annotation Term="Org.OData.Core.V1.Computed" Bool="true"/>
                 </Property>
             </EntityType>
         </Schema>
-        <Schema xmlns="http://docs.oasis-open.org/odata/ns/edm" Namespace="Simple">
-            <TypeDefinition Name="ObjectID" UnderlyingType="Edm.String"></TypeDefinition>
+        <Schema xmlns:d="http://schemas.microsoft.com/ado/2007/08/dataservices" xmlns:m="http://schemas.microsoft.com/ado/2007/08/dataservices/metadata" xmlns="http://schemas.microsoft.com/ado/2008/09/edm" Namespace="Simple">
+            <TypeDefinition Name="ObjectID" UnderlyingType="Edm.String">
+            </TypeDefinition>
         </Schema>
-    </edmx:DataServices>
+    </m:DataServices>
 </edmx:Edmx>

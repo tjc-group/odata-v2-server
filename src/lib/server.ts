@@ -1,4 +1,4 @@
-import { ServiceMetadata } from "odata-v4-service-metadata";
+import { ServiceMetadata } from "@tjc-group/odata-v2-service-metadata";
 import { ServiceDocument } from "odata-v4-service-document";
 import { Edm as Metadata } from "odata-v4-metadata";
 import * as ODataParser from "odata-v4-parser";
@@ -49,7 +49,7 @@ function ensureODataContentType(req, res, contentType?){
     res.contentType(contentType);
 }
 function ensureODataHeaders(req, res, next?){
-    res.setHeader("OData-Version", "4.0");
+    res.setHeader("OData-Version", "2.0");
 
     ensureODataMetadataType(req, res);
     let charset = req.headers["accept-charset"] || "utf-8";
