@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8" standalone="yes"?>
 <edmx:Edmx xmlns:edmx="http://schemas.microsoft.com/ado/2007/06/edmx" Version="1.0">
-    <m:DataServices xmlns:m="http://schemas.microsoft.com/ado/2007/08/dataservices/metadata" DataServiceVersion="2.0">
+    <edmx:DataServices xmlns:m="http://schemas.microsoft.com/ado/2007/08/dataservices/metadata" m:DataServiceVersion="2.0">
         <Schema xmlns:d="http://schemas.microsoft.com/ado/2007/08/dataservices" xmlns:m="http://schemas.microsoft.com/ado/2007/08/dataservices/metadata" xmlns="http://schemas.microsoft.com/ado/2008/09/edm" Namespace="Default">
             <EntityType Name="Kitten">
                 <Key>
@@ -23,5 +23,5 @@
                 <Annotation Term="UI.DisplayName" String="Meww Meww"/>
             </Annotations>
         </Schema>
-    </m:DataServices>
+    </edmx:DataServices>
 </edmx:Edmx>
