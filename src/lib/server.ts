@@ -1,5 +1,5 @@
 import { ServiceMetadata } from "@tjc-group/odata-v2-service-metadata";
-import { ServiceDocument } from "odata-v4-service-document";
+import { ServiceDocument } from "@tjc-group/odata-v4-service-document";
 import { Edm as Metadata } from "@tjc-group/odata-v4-metadata";
 import * as ODataParser from "odata-v4-parser";
 import { Token, TokenType } from "odata-v4-parser/lib/lexer";
