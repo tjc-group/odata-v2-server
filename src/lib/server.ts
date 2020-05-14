@@ -266,15 +266,16 @@ export class ODataServerBase extends Transform{
         let router = express.Router();
         router.use((req, _, next) => {
             req.url = req.url.replace(/[\/]+/g, "/").replace(":/", "://");
-            if (req.headers["odata-maxversion"] && req.headers["odata-maxversion"] < "4.0") return next(new HttpRequestError(500, "Only OData version 4.0 supported"));
+            if (req.headers["odata-maxversion"] && req.headers["odata-maxversion"] < "2.0") return next(new HttpRequestError(500, "Only OData version 2.0 supported"));
             next();
         });
         router.use(bodyParser.json());
         if ((<any>server).cors) router.use(cors());
         router.use((req, res, next) => {
-            res.setHeader("OData-Version", "4.0");
+            res.setHeader("OData-Version", "2.0");
             if (req.headers.accept &&
                 req.headers.accept.indexOf("application/json") < 0 &&
+                req.headers.accept.indexOf("application/xml") < 0 &&
                 req.headers.accept.indexOf("text/html") < 0 &&
                 req.headers.accept.indexOf("*/*") < 0 &&
                 req.headers.accept.indexOf("xml") < 0){
