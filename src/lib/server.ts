@@ -138,54 +138,57 @@ export class ODataServerBase extends Transform {
                         }
                     }
 
-                    async.mapValuesLimit(req.body.operations, 5,
-                        iterateOperation,
-                        function (error, result) {
-                            function buildBatchResponse(boundary, operations): any {
-                                return Object
-                                    .keys(operations)
-                                    .sort()
-                                    .map(index => {
-                                        let operation = operations[index];
-                                        let content = ""
-                                        let payload;
+                    try {
+                        async.mapValuesLimit(req.body.operations, 5,
+                            iterateOperation,
+                            function (error, result) {
+                                function buildBatchResponse(boundary, operations): any {
+                                    return Object
+                                        .keys(operations)
+                                        .sort()
+                                        .map(index => {
+                                            let operation = operations[index];
+                                            let content = ""
+                                            let payload;
 
-                                        if (operation.operations) {
-                                            payload = buildBatchResponse(operation.boundary, operation.operations)
-                                            content += "Content-Type: multipart/mixed; boundary=" +
-                                                operation.boundary + "\nContent-Length: " + payload.length + "\n\n" + payload + "\n";
-                                        } else {
-                                            content += "Content-Type: application/http\nContent-Transfer-Encoding: binary\n\n"
-                                            if (operation.error) {
-                                                let statusCode = operation.error.statusCode || 500;
-                                                payload = JSON.stringify({
-                                                    message: operation.error.message,
-                                                    statusCode: statusCode,
-                                                    resource: operation.resourcePath
-                                                });
-                                                content += "HTTP/1.1 " + statusCode + " " + operation.error.message + "\n" +
-                                                    "Content-Type: application/json\nContent-Length: " + payload.length + "\n\n" + payload + "\n";
+                                            if (operation.operations) {
+                                                payload = buildBatchResponse(operation.boundary, operation.operations)
+                                                content += "Content-Type: multipart/mixed; boundary=" +
+                                                    operation.boundary + "\nContent-Length: " + payload.length + "\n\n" + payload + "\n";
                                             } else {
-                                                payload = JSON.stringify(operation.payload);
-                                                content += "HTTP/1.1 " + operation.statusCode + " OK\n" +
-                                                    "Content-Type: " + operation.contentType + "\nContent-Length: " + payload.length + "\n\n" + payload + "\n";
+                                                content += "Content-Type: application/http\nContent-Transfer-Encoding: binary\n\n"
+                                                if (operation.error) {
+                                                    let statusCode = operation.error.statusCode || 500;
+                                                    payload = JSON.stringify({
+                                                        message: operation.error.message,
+                                                        statusCode: statusCode,
+                                                        resource: operation.resourcePath
+                                                    });
+                                                    content += "HTTP/1.1 " + statusCode + " " + operation.error.message + "\n" +
+                                                        "Content-Type: application/json\nContent-Length: " + payload.length + "\n\n" + payload + "\n";
+                                                } else {
+                                                    payload = JSON.stringify(operation.payload);
+                                                    content += "HTTP/1.1 " + operation.statusCode + " OK\n" +
+                                                        "Content-Type: " + operation.contentType + "\nContent-Length: " + payload.length + "\n\n" + payload + "\n";
+                                                }
                                             }
-                                        }
-                                        return "--" + boundary + "\n" + content;
-                                    }).join("\n") + "--" + boundary + "--"
-                            }
+                                            return "--" + boundary + "\n" + content;
+                                        }).join("\n") + "--" + boundary + "--"
+                                }
 
-                            let content = buildBatchResponse(req.body.boundary, result);
-                            content = "HTTP/1.1 202 Accepted\n" +
-                                "DataServiceVersion: 1.0\n" +
-                                "Content-Length: " + content.length + "\n" +
-                                "Content-Type: multipart/mixed; boundary=" + req.body.boundary + "\n\n" + content
-                            res.status(202).send(content);
-                        });
+                                let content = buildBatchResponse(req.body.boundary, result);
+                                content = "HTTP/1.1 202 Accepted\n" +
+                                    "DataServiceVersion: 1.0\n" +
+                                    "Content-Length: " + content.length + "\n" +
+                                    "Content-Type: multipart/mixed; boundary=" + req.body.boundary + "\n\n" + content
+                                res.status(202).send(content);
+                            });
+                    } catch (error) {
+                        next(error);
+                    }
                 } else {
                     throw new HttpRequestError(415, "Request payload must not be blank for batch request")
                 }
-                next();
             } catch (err) {
                 next(err);
             }
