@@ -1,5 +1,5 @@
 import { createFilter } from "odata-v4-inmemory";
-import { Token } from "odata-v4-parser/lib/lexer";
+import { Token } from "@tjc-group/odata-v2-parser/lib/lexer";
 import { ODataServer, ODataController, Edm, odata } from "../lib/index";
 
 let schemaJson = {

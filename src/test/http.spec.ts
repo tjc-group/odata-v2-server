@@ -464,6 +464,66 @@ describe("OData HTTP", () => {
             });
         });
 
+        it("should suppport multipart/mixed content type", () => {
+            return request.post(`http://localhost:3003/$batch`, { 
+                headers: { 
+                    accept: 'multipart/mixed',
+                    "content-type": "multipart/mixed; boundary=batch_36522ad7-fc75-4b56-8c71-56071383e77b"
+                },
+                body: `--batch_36522ad7-fc75-4b56-8c71-56071383e77b
+Content-Type: application/http 
+Content-Transfer-Encoding:binary
+
+GET /Meta(MongoId='578f2b8c12eaebabec4af242',Id=1,p9=9,p10=10)?$expand=Meta.Meta/MediaList HTTP/1.1
+Host: localhost:3003
+
+
+--batch_36522ad7-fc75-4b56-8c71-56071383e77b 
+Content-Type: multipart/mixed; boundary=changeset_77162fcd-b8da-41ac-a9f8-9357efbbd621 
+Content-Length: ###       
+
+--changeset_77162fcd-b8da-41ac-a9f8-9357efbbd621
+Content-Type: application/http 
+Content-Transfer-Encoding: binary 
+
+POST /Customers HTTP/1.1 
+Host: localhost:3003  
+Content-Type: application/atom+xml;type=entry 
+Content-Length: ### 
+
+<AtomPub representation of a new Customer> 
+
+--changeset_77162fcd-b8da-41ac-a9f8-9357efbbd621
+Content-Type: application/http 
+Content-Transfer-Encoding:binary 
+
+PUT /service/Customers('ALFKI') HTTP/1.1 
+Host: localhost:3003 
+Content-Type: application/json 
+If-Match: xxxxx 
+Content-Length: ### 
+
+{ "Description": "First customer", 
+"Name": "John Doe" }
+
+--changeset_77162fcd-b8da-41ac-a9f8-9357efbbd621-- 
+
+--batch_36522ad7-fc75-4b56-8c71-56071383e77b
+Content-Type: application/http 
+Content-Transfer-Encoding:binary 
+
+GET service/Products HTTP/1.1 
+Host: localhost:3003 
+
+
+--batch_36522ad7-fc75-4b56-8c71-56071383e77b--`
+            }, (err, response, result) => {
+                expect(JSON.parse(result).error.message).to.equal("Unsupported media type.");
+            }).catch(ex => {
+                if (ex) expect(JSON.parse(ex.error).error.message).to.equal("Unsupported media type.");
+            });
+        });
+
         it("should return error if the media type is unsupported", () => {
             return request.get(`http://localhost:3003/EntitySet`, { headers: { accept: 'text/plain;odata.metadata=none' } }, (err, response, result) => {
                 expect(JSON.parse(result).error.message).to.equal("Unsupported media type.");
@@ -472,11 +532,11 @@ describe("OData HTTP", () => {
             });
         });
 
-        it("should return error if odata-maxversion less then 4.0", () => {
-            return request.get(`http://localhost:3002/EntitySet`, { headers: { 'odata-maxversion': '3.0' ,accept: '*/*;odata.metadata=full' } }, (err, response, result) => {
-                expect(JSON.parse(result).error.message).to.equal("Only OData version 4.0 supported");
+        it("should return error if odata-maxversion less then 2.0", () => {
+            return request.get(`http://localhost:3002/EntitySet`, { headers: { 'odata-maxversion': '1.0' ,accept: '*/*;odata.metadata=full' } }, (err, response, result) => {
+                expect(JSON.parse(result).error.message).to.equal("Only OData version 2.0 supported");
             }).catch(ex => {
-                if (ex) expect(JSON.parse(ex.error).error.message).to.equal("Only OData version 4.0 supported");
+                if (ex) expect(JSON.parse(ex.error).error.message).to.equal("Only OData version 2.0 supported");
             });
         });
 
@@ -819,10 +879,10 @@ describe("OData HTTP", () => {
     describe("Non existent entity", () => {
         it("should return cannot read property node error", () => {
             return request.get(`http://localhost:3002/NonExistent`, (err, req, res) => {
-                expect(JSON.parse(res).error.message).to.equal("Cannot read property 'node' of undefined");
+                expect(JSON.parse(res).error.message).to.equal("Resource not found.");
             })
             .catch(ex => {
-                expect(JSON.parse(ex.error).error.message).to.equal("Cannot read property 'node' of undefined");
+                expect(JSON.parse(ex.error).error.message).to.equal("Resource not found.");
             });
         });
     });

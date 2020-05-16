@@ -14,4 +14,4 @@ export * from "./metadata";
 export * from "./result";
 export * from "./visitor";
 export * from "./error";
-export { Token as ODataQuery } from "odata-v4-parser/lib/lexer";
+export { Token as ODataQuery } from "@tjc-group/odata-v2-parser/lib/lexer";

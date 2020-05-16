@@ -1,8 +1,8 @@
 import { ServiceMetadata } from "@tjc-group/odata-v2-service-metadata";
 import { ServiceDocument } from "@tjc-group/odata-v4-service-document";
 import { Edm as Metadata } from "@tjc-group/odata-v4-metadata";
-import * as ODataParser from "odata-v4-parser";
-import { Token, TokenType } from "odata-v4-parser/lib/lexer";
+import * as ODataParser from "@tjc-group/odata-v2-parser";
+import { Token, TokenType } from "@tjc-group/odata-v2-parser/lib/lexer";
 import * as express from "express";
 import * as http from "http";
 import * as bodyParser from "body-parser";
@@ -17,38 +17,40 @@ import { ODataProcessor, ODataProcessorOptions, ODataMetadataType } from "./proc
 import { HttpRequestError, UnsupportedMediaTypeError } from "./error";
 import { ContainerBase } from "./edm";
 import { Readable, Writable } from "stream";
+import * as async from "async";
+import * as deepmerge from "deepmerge";
 
 /** HTTP context interface when using the server HTTP request handler */
-export interface ODataHttpContext{
-    url:string
-    method:string
-    protocol:"http"|"https"
-    host:string
-    base:string
-    request:express.Request & Readable
-    response:express.Response & Writable
+export interface ODataHttpContext {
+    url: string
+    method: string
+    protocol: "http" | "https"
+    host: string
+    base: string
+    request: express.Request & Readable
+    response: express.Response & Writable
 }
 
-function ensureODataMetadataType(req, res){
-    let metadata:ODataMetadataType = ODataMetadataType.minimal;
-    if (req.headers && req.headers.accept && req.headers.accept.indexOf("odata.metadata=") >= 0){
+function ensureODataMetadataType(req, res) {
+    let metadata: ODataMetadataType = ODataMetadataType.minimal;
+    if (req.headers && req.headers.accept && req.headers.accept.indexOf("odata.metadata=") >= 0) {
         if (req.headers.accept.indexOf("odata.metadata=full") >= 0) metadata = ODataMetadataType.full;
         else if (req.headers.accept.indexOf("odata.metadata=none") >= 0) metadata = ODataMetadataType.none;
     }
 
     res["metadata"] = metadata;
 }
-function ensureODataContentType(req, res, contentType?){
+function ensureODataContentType(req, res, contentType?) {
     contentType = contentType || "application/json";
     if (contentType.indexOf("odata.metadata=") < 0) contentType += `;odata.metadata=${ODataMetadataType[res["metadata"]]}`;
     if (contentType.indexOf("odata.streaming=") < 0) contentType += ";odata.streaming=true";
     if (contentType.indexOf("IEEE754Compatible=") < 0) contentType += ";IEEE754Compatible=false";
-    if (req.headers.accept && req.headers.accept.indexOf("charset") > 0){
+    if (req.headers.accept && req.headers.accept.indexOf("charset") > 0) {
         contentType += `;charset=${res["charset"]}`;
     }
     res.contentType(contentType);
 }
-function ensureODataHeaders(req, res, next?){
+function ensureODataHeaders(req, res, next?) {
     res.setHeader("OData-Version", "2.0");
 
     ensureODataMetadataType(req, res);
@@ -56,7 +58,7 @@ function ensureODataHeaders(req, res, next?){
     res["charset"] = charset;
     ensureODataContentType(req, res);
 
-    if ((req.headers.accept && req.headers.accept.indexOf("charset") < 0) || req.headers["accept-charset"]){
+    if ((req.headers.accept && req.headers.accept.indexOf("charset") < 0) || req.headers["accept-charset"]) {
         const bufferEncoding = {
             "utf-8": "utf8",
             "utf-16": "utf16le"
@@ -72,19 +74,126 @@ function ensureODataHeaders(req, res, next?){
 }
 
 /** ODataServer base class to be extended by concrete OData Server data sources */
-export class ODataServerBase extends Transform{
-    private static _metadataCache:any
-    static namespace:string
+export class ODataServerBase extends Transform {
+    private static _metadataCache: any
+    static namespace: string
     static container = new ContainerBase();
     static parser = ODataParser;
-    static connector:IODataConnector
-    static validator:(odataQuery:string | Token) => null;
-    static errorHandler:express.ErrorRequestHandler = ODataErrorHandler;
-    private serverType:typeof ODataServer
+    static connector: IODataConnector
+    static validator: (odataQuery: string | Token) => null;
+    static errorHandler: express.ErrorRequestHandler = ODataErrorHandler;
+    private serverType: typeof ODataServer
 
-    static requestHandler(){
-        return (req:express.Request, res:express.Response, next:express.NextFunction) => {
-            try{
+    static batchRequestHandler(handler: (req: express.Request, res: express.Response, next: express.NextFunction) => void) {
+
+        return (req: express.Request, res: express.Response, next: express.NextFunction) => {
+            try {
+                if (req.body && req.body.operations) {
+
+                    function iterateOperation(operation, index, callback) {
+                        let result: any = {};
+                        Object.assign(result, operation, { index: index });
+                        if (operation.operations) { // nested batch, can be changeset inside batch
+                            async.mapValuesLimit(operation.operations, 5, iterateOperation, function (error, results) {
+                                callback(null, Object.assign(result, { operations: results }));
+                            });
+                        } else {
+
+                            let fakeReq = Object.assign({}, req, {
+                                url: operation.resourcePath,
+                                originalUrl: operation.resourcePath,
+                                path: operation.resourcePath,
+                                method: operation.method,
+                                headers: {
+                                    "content-type": operation.contentType
+                                },
+                                body: operation.payload,
+                                secure: req.secure,
+                                protocol: req.protocol
+                            })
+
+                            let fakeRes = Object.assign({}, res, {
+                                setHeader: <any>((key, value) => {
+                                    result.headers = result.headers || {};
+                                    result.headers[key] = value;
+                                }),
+                                send: <any>((data) => {
+                                    callback(null, Object.assign(result, { statusCode: result.statusCode || 200, payload: data }));
+                                }),
+                                json: <any>((data) => {
+                                    callback(null, Object.assign(result, { statusCode: result.statusCode || 200, payload: data }));
+                                }),
+                                contentType: <any>((contentType) => {
+                                    result.contentType = contentType;
+                                }),
+                                status: <any>((statusCode: number): any => {
+                                    result.statusCode = statusCode;
+                                    return fakeRes;
+                                })
+                            })
+
+                            handler(fakeReq, fakeRes, function (error) {
+                                callback(null, Object.assign(result, { error: error }));
+                            });
+                        }
+                    }
+
+                    async.mapValuesLimit(req.body.operations, 5,
+                        iterateOperation,
+                        function (error, result) {
+                            function buildBatchResponse(boundary, operations): any {
+                                return Object
+                                    .keys(operations)
+                                    .sort()
+                                    .map(index => {
+                                        let operation = operations[index];
+                                        let content = ""
+                                        let payload;
+
+                                        if (operation.operations) {
+                                            payload = buildBatchResponse(operation.boundary, operation.operations)
+                                            content += "Content-Type: multipart/mixed; boundary=" +
+                                                operation.boundary + "\nContent-Length: " + payload.length + "\n\n" + payload + "\n";
+                                        } else {
+                                            content += "Content-Type: application/http\nContent-Transfer-Encoding: binary\n\n"
+                                            if (operation.error) {
+                                                let statusCode = operation.error.statusCode || 500;
+                                                payload = JSON.stringify({
+                                                    message: operation.error.message,
+                                                    statusCode: statusCode,
+                                                    resource: operation.resourcePath
+                                                });
+                                                content += "HTTP/1.1 " + statusCode + " " + operation.error.message + "\n" +
+                                                    "Content-Type: application/json\nContent-Length: " + payload.length + "\n\n" + payload + "\n";
+                                            } else {
+                                                payload = JSON.stringify(operation.payload);
+                                                content += "HTTP/1.1 " + operation.statusCode + " OK\n" +
+                                                    "Content-Type: " + operation.contentType + "\nContent-Length: " + payload.length + "\n\n" + payload + "\n";
+                                            }
+                                        }
+                                        return "--" + boundary + "\n" + content;
+                                    }).join("\n") + "--" + boundary + "--"
+                            }
+
+                            let content = buildBatchResponse(req.body.boundary, result);
+                            content = "HTTP/1.1 202 Accepted\n" +
+                                "DataServiceVersion: 1.0\n" +
+                                "Content-Length: " + content.length + "\n" +
+                                "Content-Type: multipart/mixed; boundary=" + req.body.boundary + "\n\n" + content
+                            res.status(202).send(content);
+                        });
+                } else {
+                    throw new HttpRequestError(415, "Request payload must not be blank for batch request")
+                }
+                next();
+            } catch (err) {
+                next(err);
+            }
+        };
+    }
+    static requestHandler() {
+        return (req: express.Request, res: express.Response, next: express.NextFunction) => {
+            try {
                 ensureODataHeaders(req, res);
                 let processor = this.createProcessor({
                     url: req.url,
@@ -98,36 +207,36 @@ export class ODataServerBase extends Transform{
                     metadata: res["metadata"]
                 });
                 processor.on("header", (headers) => {
-                    for (let prop in headers){
-                        if (prop.toLowerCase() == "content-type"){
+                    for (let prop in headers) {
+                        if (prop.toLowerCase() == "content-type") {
                             ensureODataContentType(req, res, headers[prop]);
-                        }else{
+                        } else {
                             res.setHeader(prop, headers[prop]);
                         }
                     }
                 });
                 let hasError = false;
                 processor.on("data", (chunk, encoding, done) => {
-                    if (!hasError){
+                    if (!hasError) {
                         res.write(chunk, encoding, done);
                     }
                 });
                 let body = req.body && Object.keys(req.body).length > 0 ? req.body : req;
                 let origStatus = res.statusCode;
-                processor.execute(body).then((result:ODataResult) => {
-                    try{
-                        if (result){
+                processor.execute(body).then((result: ODataResult) => {
+                    try {
+                        if (result) {
                             res.status((origStatus != res.statusCode && res.statusCode) || result.statusCode || 200);
-                            if (!res.headersSent){
+                            if (!res.headersSent) {
                                 ensureODataContentType(req, res, result.contentType || "text/plain");
                             }
-                            if (typeof result.body != "undefined"){
+                            if (typeof result.body != "undefined") {
                                 if (typeof result.body != "object") res.send("" + result.body);
                                 else if (!res.headersSent) res.send(result.body);
                             }
                         }
                         res.end();
-                    }catch(err){
+                    } catch (err) {
                         hasError = true;
                         next(err);
                     }
@@ -135,27 +244,27 @@ export class ODataServerBase extends Transform{
                     hasError = true;
                     next(err);
                 });
-            }catch(err){
+            } catch (err) {
                 next(err);
             }
         };
     }
 
-    static execute<T>(url:string, body?:object):Promise<ODataResult<T>>;
-    static execute<T>(url:string, method?:string, body?:object):Promise<ODataResult<T>>;
-    static execute<T>(context:object, body?:object):Promise<ODataResult<T>>;
-    static execute<T>(url:string | object, method?:string | object, body?:object):Promise<ODataResult<T>>{
-        let context:any = {};
-        if (typeof url == "object"){
+    static execute<T>(url: string, body?: object): Promise<ODataResult<T>>;
+    static execute<T>(url: string, method?: string, body?: object): Promise<ODataResult<T>>;
+    static execute<T>(context: object, body?: object): Promise<ODataResult<T>>;
+    static execute<T>(url: string | object, method?: string | object, body?: object): Promise<ODataResult<T>> {
+        let context: any = {};
+        if (typeof url == "object") {
             context = Object.assign(context, url);
-            if (typeof method == "object"){
+            if (typeof method == "object") {
                 body = method;
             }
             url = undefined;
             method = undefined;
-        }else if (typeof url == "string"){
+        } else if (typeof url == "string") {
             context.url = url;
-            if (typeof method == "object"){
+            if (typeof method == "object") {
                 body = method;
                 method = "POST";
             }
@@ -170,41 +279,41 @@ export class ODataServerBase extends Transform{
         let flushObject;
         let response = "";
         if (context.response instanceof Writable) processor.pipe(context.response);
-        processor.on("data", (chunk:any) => {
-            if (!(typeof chunk == "string" || chunk instanceof Buffer)){
-                if (chunk["@odata.context"] && chunk.value && Array.isArray(chunk.value) && chunk.value.length == 0){
+        processor.on("data", (chunk: any) => {
+            if (!(typeof chunk == "string" || chunk instanceof Buffer)) {
+                if (chunk["@odata.context"] && chunk.value && Array.isArray(chunk.value) && chunk.value.length == 0) {
                     flushObject = chunk;
                     flushObject.value = values;
-                }else{
+                } else {
                     values.push(chunk);
                 }
-            }else response += chunk.toString();
+            } else response += chunk.toString();
         });
-        return processor.execute(context.body || body).then((result:ODataResult<T>) => {
-            if (flushObject){
+        return processor.execute(context.body || body).then((result: ODataResult<T>) => {
+            if (flushObject) {
                 result.body = flushObject;
                 if (!result.elementType || typeof result.elementType == "object") result.elementType = flushObject.elementType;
                 delete flushObject.elementType;
                 result.contentType = result.contentType || "application/json";
-            }else if (result && response){
+            } else if (result && response) {
                 result.body = <any>response;
             }
             return result;
         });
     }
 
-    constructor(opts?:TransformOptions){
+    constructor(opts?: TransformOptions) {
         super(Object.assign(<TransformOptions>{
             objectMode: true
         }, opts));
         this.serverType = Object.getPrototypeOf(this).constructor;
     }
 
-    _transform(chunk:any, _?:string, done?:Function){
-        if ((chunk instanceof Buffer) || typeof chunk == "string"){
-            try{
+    _transform(chunk: any, _?: string, done?: Function) {
+        if ((chunk instanceof Buffer) || typeof chunk == "string") {
+            try {
                 chunk = JSON.parse(chunk.toString());
-            }catch(err){
+            } catch (err) {
                 return done(err);
             }
         }
@@ -214,19 +323,19 @@ export class ODataServerBase extends Transform{
         }, <any>done);
     }
 
-    _flush(done?:Function){
+    _flush(done?: Function) {
         if (typeof done == "function") done();
     }
 
-    static createProcessor(context:any, options?:ODataProcessorOptions){
+    static createProcessor(context: any, options?: ODataProcessorOptions) {
         return new ODataProcessor(context, this, options);
     }
 
-    static $metadata():ServiceMetadata;
-    static $metadata(metadata:Metadata.Edmx | any);
-    static $metadata(metadata?):ServiceMetadata{
-        if (metadata){
-            if (!(metadata instanceof Metadata.Edmx)){
+    static $metadata(): ServiceMetadata;
+    static $metadata(metadata: Metadata.Edmx | any);
+    static $metadata(metadata?): ServiceMetadata {
+        if (metadata) {
+            if (!(metadata instanceof Metadata.Edmx)) {
                 if (metadata.version && metadata.dataServices && Array.isArray(metadata.dataServices.schema)) this._metadataCache = ServiceMetadata.processMetadataJson(metadata);
                 else this._metadataCache = ServiceMetadata.defineEntities(metadata);
             }
@@ -234,34 +343,156 @@ export class ODataServerBase extends Transform{
         return this._metadataCache || (this._metadataCache = ServiceMetadata.processMetadataJson(createMetadataJSON(this)));
     }
 
-    static document():ServiceDocument{
+    static document(): ServiceDocument {
         return ServiceDocument.processEdmx(this.$metadata().edmx);
     }
 
-    static addController(controller:typeof ODataController, isPublic?:boolean);
-    static addController(controller:typeof ODataController, isPublic?:boolean, elementType?:Function);
-    static addController(controller:typeof ODataController, entitySetName?:string, elementType?:Function);
-    static addController(controller:typeof ODataController, entitySetName?:string | boolean, elementType?:Function){
+    static addController(controller: typeof ODataController, isPublic?: boolean);
+    static addController(controller: typeof ODataController, isPublic?: boolean, elementType?: Function);
+    static addController(controller: typeof ODataController, entitySetName?: string, elementType?: Function);
+    static addController(controller: typeof ODataController, entitySetName?: string | boolean, elementType?: Function) {
         odata.controller(controller, <string>entitySetName, elementType)(this);
     }
-    static getController(elementType:Function){
-        for (let i in this.prototype){
+    static getController(elementType: Function) {
+        for (let i in this.prototype) {
             if (this.prototype[i] &&
                 this.prototype[i].prototype &&
                 this.prototype[i].prototype instanceof ODataController &&
-                this.prototype[i].prototype.elementType == elementType){
-                    return this.prototype[i];
-                }
+                this.prototype[i].prototype.elementType == elementType) {
+                return this.prototype[i];
+            }
         }
         return null;
     }
 
-    static create():express.Router;
-    static create(port:number):http.Server;
-    static create(path:string, port:number):http.Server;
-    static create(port:number, hostname:string):http.Server;
-    static create(path?:string | RegExp | number, port?:number | string, hostname?:string):http.Server;
-    static create(path?:string | RegExp | number, port?:number | string, hostname?:string):http.Server | express.Router{
+    static parseMultiPart(contentType: string, content: string, parentType?: string): any {
+        function skipBlankLines(lines: string[]): string[] {
+            let line: string;
+            do {
+                line = lines.shift().trim();
+            } while (lines.length > 0 && line.length === 0)
+            if (line.length > 0) {
+                lines.unshift(line);
+            }
+            return lines;
+        }
+
+        let parts: any;
+
+        let boundaryMask = /boundary=((batch|changeset)_[\w-]+)/
+        let matches = contentType.match(boundaryMask);
+        if (matches) {
+            let boundary = matches[1];
+            let partType = matches[2];
+            if ((parentType === "batch" && partType !== "changeset") || (parentType === partType)) {
+                throw new HttpRequestError(415, "Nesting batch requests is not allowed");
+            }
+            parts = content.split("--" + boundary).filter(line => line.trim().length > 0 && line.trim() !== "--");
+            parts = {
+                type: partType,
+                boundary: boundary,
+                operations: parts.map(function (part, index): any {
+                    function getTypeAndLength(obj: any, lines) {
+                        let line: string
+                        let matches: any
+                        do {
+                            line = lines.shift().trim();
+                            if (contentTypeMask.test(line)) {
+                                matches = line.match(contentTypeMask);
+                                obj.contentType = matches && matches[1];
+                            } else if (contentLengthMask.test(line)) {
+                                matches = line.match(contentLengthMask);
+                                obj.contentLength = matches && parseInt(matches[1], 10);
+                            }
+                        } while (line.length > 0);
+                    }
+
+                    const contentTypeMask = /^content-type:\s*(.+)/i
+                    const contentLengthMask = /^content-length:\s*(.+)/i
+                    const operationMask = /^(GET|PUT|POST|MERGE|DELETE|PATCH)\s+([^\s]+)/i
+                    const changeOperations = /^(PUT|POST|MERGE|DELETE|PATCH)$/i
+
+                    let lines = skipBlankLines(part.split("\n"));
+
+                    let batchPart: any = {}
+
+                    getTypeAndLength(batchPart, lines)
+                    if (!batchPart.contentType) {
+                        throw new HttpRequestError(415, "Incorrect body of batch request: no content-type in part " + index);
+                    }
+
+                    lines = skipBlankLines(lines);
+                    if (batchPart.contentType.indexOf("multipart/mixed") >= 0) {
+                        Object.assign(batchPart, ODataServerBase.parseMultiPart(batchPart.contentType, lines.join("\n"), partType));
+                    } else {
+                        let line = lines.shift().trim();
+
+                        if (line && operationMask.test(line)) {
+                            let lineParts = line.match(operationMask);
+                            batchPart.method = lineParts[1];
+
+                            if (partType === "changeset" && !changeOperations.test(batchPart.method)) {
+                                throw new HttpRequestError(415, `Method ${batchPart.method} not allowed in change set ${boundary}`);
+                            }
+                            batchPart.resourcePath = lineParts[2];
+
+                            getTypeAndLength(batchPart, lines)
+
+                            batchPart.payload = []
+                            while (line = lines.shift()) {
+                                batchPart.payload.push(line);
+                            }
+
+                            batchPart.payload = batchPart.payload.join("\n");
+                            if (batchPart.contentType.indexOf("application/json") >= 0) {
+                                try {
+                                    batchPart.payload = JSON.parse(batchPart.payload);
+                                } catch (e) {
+                                    throw new HttpRequestError(415, `Invalid payload in batch ${boundary}, part ${index}: ${e.message}`);
+                                }
+                            }
+
+                        } else {
+                            throw new HttpRequestError(415, `Incorrect batch syntax in batch ${boundary}, part ${index}`);
+                        }
+                    }
+
+                    return batchPart;
+                })
+            };
+        }
+
+        return parts;
+    }
+
+    static parseBody(req: express.Request, res: express.Response, next: express.NextFunction) {
+        if (req.is("multipart/mixed")) {
+            bodyParser.raw({
+                limit: "1mb",
+                type: function () { return true; }
+            })(req, res, (error) => {
+                try {
+                    if (Buffer.isBuffer(req.body)) {
+                        req.body = req.body.toString()
+                    }
+                    var contentType = req.headers['content-type']; // for batch: multipart/mixed;boundary=batch_d844-4d5f-4761
+                    req.body = ODataServerBase.parseMultiPart(contentType, req.body)
+                    next();
+                } catch (e) {
+                    next(e)
+                }
+            });
+        } else {
+            bodyParser.json()(req, res, next);
+        }
+    }
+
+    static create(): express.Router;
+    static create(port: number): http.Server;
+    static create(path: string, port: number): http.Server;
+    static create(port: number, hostname: string): http.Server;
+    static create(path?: string | RegExp | number, port?: number | string, hostname?: string): http.Server;
+    static create(path?: string | RegExp | number, port?: number | string, hostname?: string): http.Server | express.Router {
         let server = this;
         let router = express.Router();
         router.use((req, _, next) => {
@@ -275,29 +506,33 @@ export class ODataServerBase extends Transform{
             res.setHeader("OData-Version", "2.0");
             if (req.headers.accept &&
                 req.headers.accept.indexOf("application/json") < 0 &&
+                req.headers.accept.indexOf("multipart/mixed") < 0 && // batch processing
                 req.headers.accept.indexOf("application/xml") < 0 &&
                 req.headers.accept.indexOf("text/html") < 0 &&
                 req.headers.accept.indexOf("*/*") < 0 &&
-                req.headers.accept.indexOf("xml") < 0){
+                req.headers.accept.indexOf("xml") < 0) {
                 next(new UnsupportedMediaTypeError());
-            }else next();
+            } else next();
         });
         router.get("/", ensureODataHeaders, (req, _, next) => {
             if (typeof req.query == "object" && Object.keys(req.query).length > 0) return next(new HttpRequestError(500, "Unsupported query"));
             next();
         }, server.document().requestHandler());
         router.get("/\\$metadata", server.$metadata().requestHandler());
+        router.post("/\\$batch",
+            ODataServerBase.parseBody,
+            server.batchRequestHandler(server.requestHandler()));
         router.use(server.requestHandler());
         router.use(server.errorHandler);
 
-        if (typeof path == "number"){
-            if (typeof port == "string"){
+        if (typeof path == "number") {
+            if (typeof port == "string") {
                 hostname = "" + port;
             }
             port = parseInt(<any>path, 10);
             path = undefined;
         }
-        if (typeof port == "number"){
+        if (typeof port == "number") {
             let app = express();
             app.use((<any>path) || "/", router);
             return app.listen(port, <any>hostname);
@@ -305,12 +540,12 @@ export class ODataServerBase extends Transform{
         return router;
     }
 }
-export class ODataServer extends ODataBase<ODataServerBase, typeof ODataServerBase>(ODataServerBase){}
+export class ODataServer extends ODataBase<ODataServerBase, typeof ODataServerBase>(ODataServerBase) { }
 
 /** ?????????? */
 /** Create Express middleware for OData error handling */
-export function ODataErrorHandler(err, _, res, next){
-    if (err){
+export function ODataErrorHandler(err, _, res, next) {
+    if (err) {
         if (res.headersSent) {
             return next(err);
         }
@@ -323,31 +558,31 @@ export function ODataErrorHandler(err, _, res, next){
                 stack: process.env.ODATA_V4_DISABLE_STACKTRACE ? undefined : err.stack
             }
         });
-    }else next();
+    } else next();
 }
 
 /** Create Express server for OData Server
  * @param server OData Server instance
  * @return       Express Router object
  */
-export function createODataServer(server:typeof ODataServer):express.Router;
+export function createODataServer(server: typeof ODataServer): express.Router;
 /** Create Express server for OData Server
  * @param server OData Server instance
  * @param port   port number for Express to listen to
  */
-export function createODataServer(server:typeof ODataServer, port:number):http.Server;
+export function createODataServer(server: typeof ODataServer, port: number): http.Server;
 /** Create Express server for OData Server
  * @param server OData Server instance
  * @param path   routing path for Express
  * @param port   port number for Express to listen to
  */
-export function createODataServer(server:typeof ODataServer, path:string, port:number):http.Server;
+export function createODataServer(server: typeof ODataServer, path: string, port: number): http.Server;
 /** Create Express server for OData Server
  * @param server   OData Server instance
  * @param port     port number for Express to listen to
  * @param hostname hostname for Express
  */
-export function createODataServer(server:typeof ODataServer, port:number, hostname:string):http.Server;
+export function createODataServer(server: typeof ODataServer, port: number, hostname: string): http.Server;
 /** Create Express server for OData Server
  * @param server   OData Server instance
  * @param path     routing path for Express
@@ -355,6 +590,6 @@ export function createODataServer(server:typeof ODataServer, port:number, hostna
  * @param hostname hostname for Express
  * @return         Express Router object
  */
-export function createODataServer(server:typeof ODataServer, path?:string | RegExp | number, port?:number | string, hostname?:string):http.Server | express.Router{
+export function createODataServer(server: typeof ODataServer, path?: string | RegExp | number, port?: number | string, hostname?: string): http.Server | express.Router {
     return server.create(path, port, hostname);
 }

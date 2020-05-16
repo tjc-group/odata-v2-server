@@ -1,4 +1,5 @@
-import { Token, TokenType } from "odata-v4-parser/lib/lexer";
+import { Token, TokenType } from "@tjc-group/odata-v2-parser/lib/lexer";
+import * as parserErrors from "@tjc-group/odata-v2-parser/lib/error";
 import * as url from "url";
 import * as qs from "qs";
 import * as util from "util";
@@ -467,8 +468,16 @@ export class ODataProcessor extends Transform {
 
         context.url = decodeURIComponent(context.url);
         this.url = url.parse(context.url);
+        let ast: Token;
+        try {
+            ast = this.serverType.parser.odataUri(context.url, { metadata: this.serverType.$metadata().edmx });
+        } catch (error) {
+            if (error instanceof parserErrors.ResourceNotFoundError) {
+                throw new ResourceNotFoundError();
+            }
+            throw error;
+        }
         this.query = qs.parse(this.url.query);
-        let ast = this.serverType.parser.odataUri(context.url, { metadata: this.serverType.$metadata().edmx });
         if (this.serverType.validator) {
             this.serverType.validator(ast);
         }

@@ -1,5 +1,5 @@
 import "reflect-metadata";
-import { Token, TokenType } from "odata-v4-parser/lib/lexer";
+import { Token, TokenType } from "@tjc-group/odata-v2-parser/lib/lexer";
 import { ErrorRequestHandler } from "express";
 import { ODataServer } from "./server";
 import { ODataController } from "./controller";

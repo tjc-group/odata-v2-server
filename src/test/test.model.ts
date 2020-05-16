@@ -1,5 +1,5 @@
 /// <reference types="mocha" />
-import { Token } from "odata-v4-parser/lib/lexer";
+import { Token } from "@tjc-group/odata-v2-parser/lib/lexer";
 import { createFilter } from "odata-v4-inmemory";
 import { ODataController, ODataServer, ODataProcessor, ODataMethodType, ODataResult, Edm, odata, ODataHttpContext, ODataStream, ODataEntity } from "../lib/index";
 import { Product, Category } from "./model/model";
