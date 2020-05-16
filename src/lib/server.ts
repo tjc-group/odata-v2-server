@@ -181,6 +181,9 @@ export class ODataServerBase extends Transform {
                                     "DataServiceVersion: 1.0\n" +
                                     "Content-Length: " + content.length + "\n" +
                                     "Content-Type: multipart/mixed; boundary=" + req.body.boundary + "\n\n" + content
+
+                                res.contentType("multipart/mixed; boundary=" + req.body.boundary);    
+                                res.statusMessage = "Accepted";    
                                 res.status(202).send(content);
                             });
                     } catch (error) {
