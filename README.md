@@ -1,3 +1,8 @@
+## *This is a downgrade from [odata-v4-server](https://github.com/jaystack/odata-v4-server).*
+We need to provide OData V2 metadata and response payload
+Currently working on batch processing.
+Please be advised that this is in alfa status.*
+
 # JayStack OData V4 Server
 
 OData V4 server for node.js
