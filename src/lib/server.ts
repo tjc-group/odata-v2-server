@@ -117,11 +117,17 @@ export class ODataServerBase extends Transform {
                                     result.headers = result.headers || {};
                                     result.headers[key] = value;
                                 }),
+                                end: <any>((data: any, encoding: string, endCallback: express.NextFunction): any => {
+                                    callback(null, Object.assign(result, { statusCode: result.statusCode || 200, payload: data }));
+                                    return fakeRes;
+                                }),
                                 send: <any>((data) => {
                                     callback(null, Object.assign(result, { statusCode: result.statusCode || 200, payload: data }));
+                                    return fakeRes;
                                 }),
                                 json: <any>((data) => {
                                     callback(null, Object.assign(result, { statusCode: result.statusCode || 200, payload: data }));
+                                    return fakeRes;
                                 }),
                                 contentType: <any>((contentType) => {
                                     result.contentType = contentType;
