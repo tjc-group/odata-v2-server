@@ -151,39 +151,43 @@ export class ODataServerBase extends Transform {
                                             let content = ""
                                             let payload;
 
+                                            // use CRLF as line  separator according to https://www.w3.org/Protocols/rfc1341/7_2_Multipart.html
+
                                             if (operation.operations) {
                                                 payload = buildBatchResponse(operation.boundary, operation.operations)
                                                 content += "Content-Type: multipart/mixed; boundary=" +
-                                                    operation.boundary + "\nContent-Length: " + payload.length + "\n\n" + payload + "\n";
+                                                    operation.boundary + "\r\nContent-Length: " + payload.length + "\r\n\r\n" + payload + "\r\n";
                                             } else {
-                                                content += "Content-Type: application/http\nContent-Transfer-Encoding: binary\n\n"
+                                                content += "Content-Type: application/http\r\nContent-Transfer-Encoding: binary\r\n\r\n"
                                                 if (operation.error) {
                                                     let statusCode = operation.error.statusCode || 500;
                                                     payload = JSON.stringify({
-                                                        message: operation.error.message,
-                                                        statusCode: statusCode,
-                                                        resource: operation.resourcePath
+                                                        "error": {
+                                                            "code": statusCode,
+                                                            "message": {
+                                                                "lang": "en-US",
+                                                                "value": operation.error.message
+                                                            },
+                                                            "resource": operation.resourcePath
+                                                        }
                                                     });
-                                                    content += "HTTP/1.1 " + statusCode + " " + operation.error.message + "\n" +
-                                                        "Content-Type: application/json\nContent-Length: " + payload.length + "\n\n" + payload + "\n";
+                                                    content += "HTTP/1.1 " + statusCode + " " + operation.error.message + "\r\n" +
+                                                        "Content-Type: application/json;charset=utf-8\r\n\r\n" + payload + "\r\n";
                                                 } else {
                                                     payload = JSON.stringify(operation.payload);
-                                                    content += "HTTP/1.1 " + operation.statusCode + " OK\n" +
-                                                        "Content-Type: " + operation.contentType + "\nContent-Length: " + payload.length + "\n\n" + payload + "\n";
+                                                    content += "HTTP/1.1 " + operation.statusCode + " OK\r\n" +
+                                                        "Content-Type: application/json;charset=utf-8\r\n\r\n" + payload + "\r\n";
                                                 }
                                             }
-                                            return "--" + boundary + "\n" + content;
-                                        }).join("\n") + "--" + boundary + "--"
+                                            return "--" + boundary + "\r\n" + content;
+                                        }).join("\r\n") + "\r\n--" + boundary + "--"
                                 }
 
                                 let content = buildBatchResponse(req.body.boundary, result);
-                                content = "HTTP/1.1 202 Accepted\n" +
-                                    "DataServiceVersion: 1.0\n" +
-                                    "Content-Length: " + content.length + "\n" +
-                                    "Content-Type: multipart/mixed; boundary=" + req.body.boundary + "\n\n" + content
 
-                                res.contentType("multipart/mixed; boundary=" + req.body.boundary);    
-                                res.statusMessage = "Accepted";    
+                                res.charset = "utf-8";
+                                res.contentType("multipart/mixed;boundary=" + req.body.boundary);
+                                res.statusMessage = "Accepted";
                                 res.status(202).send(content);
                             });
                     } catch (error) {
@@ -418,7 +422,9 @@ export class ODataServerBase extends Transform {
                     const operationMask = /^(GET|PUT|POST|MERGE|DELETE|PATCH)\s+([^\s]+)/i
                     const changeOperations = /^(PUT|POST|MERGE|DELETE|PATCH)$/i
 
-                    let lines = skipBlankLines(part.split("\n"));
+                    part.replace(/\r\n/g, "\n");
+
+                    let lines = skipBlankLines(part.split("\n")); 
 
                     let batchPart: any = {}
 
