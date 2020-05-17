@@ -278,6 +278,12 @@ describe("OData HTTP", () => {
             });
         });
 
+        it("should return Meta count", () => {
+            return request.get(`http://localhost:3003/Meta/$count`, { headers: { accept: 'application/json' } }, (err, response, result) => {
+                expect(JSON.parse(result)).to.equal(2);
+            });
+        });
+
         it("should return expanded Meta with 'application/json;odata.metadata=full' header using $select", () => {
             return request.get(`http://localhost:3003/Meta(MongoId='578f2b8c12eaebabec4af242',Id=1,p9=9,p10=10)?$select=Id&$expand=Meta.Meta/MediaList`, { headers: { accept: 'application/json;odata.metadata=full' } }, (err, response, result) => {
                 expect(JSON.parse(result)).to.deep.equal({

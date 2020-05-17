@@ -73,6 +73,10 @@ function ensureODataHeaders(req, res, next?) {
     if (typeof next == "function") next();
 }
 
+interface ResultFunction {
+    (err: any, result?: any): void;
+}
+
 /** ODataServer base class to be extended by concrete OData Server data sources */
 export class ODataServerBase extends Transform {
     private static _metadataCache: any
@@ -84,18 +88,28 @@ export class ODataServerBase extends Transform {
     static errorHandler: express.ErrorRequestHandler = ODataErrorHandler;
     private serverType: typeof ODataServer
 
+
+
     static batchRequestHandler(handler: (req: express.Request, res: express.Response, next: express.NextFunction) => void) {
 
         return (req: express.Request, res: express.Response, next: express.NextFunction) => {
             try {
                 if (req.body && req.body.operations) {
 
-                    function iterateOperation(operation, index, callback) {
+                    function iterateOperation(operation, index, callback: ResultFunction) {
                         let result: any = {};
+                        var cb: ResultFunction = callback;
+
+                        function invokeCallbackOnce(err: any, result?: any) {
+                            if (cb) {
+                                cb.apply(null, arguments);
+                                cb = undefined;
+                            }
+                        }
                         Object.assign(result, operation, { index: index });
                         if (operation.operations) { // nested batch, can be changeset inside batch
                             async.mapValuesLimit(operation.operations, 5, iterateOperation, function (error, results) {
-                                callback(null, Object.assign(result, { operations: results }));
+                                invokeCallbackOnce(null, Object.assign(result, { operations: results }));
                             });
                         } else {
 
@@ -118,15 +132,15 @@ export class ODataServerBase extends Transform {
                                     result.headers[key] = value;
                                 }),
                                 end: <any>((data: any, encoding: string, endCallback: express.NextFunction): any => {
-                                    callback(null, Object.assign(result, { statusCode: result.statusCode || 200, payload: data }));
+                                    invokeCallbackOnce(null, Object.assign(result, { statusCode: result.statusCode || 200, payload: data }));
                                     return fakeRes;
                                 }),
                                 send: <any>((data) => {
-                                    callback(null, Object.assign(result, { statusCode: result.statusCode || 200, payload: data }));
+                                    invokeCallbackOnce(null, Object.assign(result, { statusCode: result.statusCode || 200, payload: data }));
                                     return fakeRes;
                                 }),
                                 json: <any>((data) => {
-                                    callback(null, Object.assign(result, { statusCode: result.statusCode || 200, payload: data }));
+                                    invokeCallbackOnce(null, Object.assign(result, { statusCode: result.statusCode || 200, payload: data }));
                                     return fakeRes;
                                 }),
                                 contentType: <any>((contentType) => {
@@ -139,7 +153,7 @@ export class ODataServerBase extends Transform {
                             })
 
                             handler(fakeReq, fakeRes, function (error) {
-                                callback(null, Object.assign(result, { error: error }));
+                                invokeCallbackOnce(null, Object.assign(result, { error: error }));
                             });
                         }
                     }
@@ -430,7 +444,7 @@ export class ODataServerBase extends Transform {
 
                     part.replace(/\r\n/g, "\n");
 
-                    let lines = skipBlankLines(part.split("\n")); 
+                    let lines = skipBlankLines(part.split("\n"));
 
                     let batchPart: any = {}
 
