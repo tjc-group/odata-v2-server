@@ -19,6 +19,8 @@ const ODataMethod: string = "odata:method";
 const ODataKeyParameters: string = "odata:keyparameters";
 const ODataLinkParameters: string = "odata:linkparameters";
 const ODataQueryParameter: string = "odata:queryparameter";
+const ODataNavStepParameter: string = "odata:navstepparameter";
+const ODataPathParameter: string = "odata:pathparameter";
 const ODataFilterParameter: string = "odata:filterparameter";
 const ODataBodyParameter: string = "odata:bodyparameter";
 const ODataContextParameter: string = "odata:contextparameter";
@@ -537,6 +539,50 @@ export const query = (function query() {
         Reflect.defineMetadata(ODataQueryParameter, paramName, target, targetKey);
     };
 })();
+
+/** Provides access to resource path navigation step (parsing tree).
+ * @param target            The prototype of the class for an instance member
+ * @param targetKey         The name of the class method
+ * @param parameterIndex    The ordinal index of the parameter in the function’s parameter list
+ */
+export const navstep = (function navstep() {
+    return function (target, targetKey, parameterIndex: number) {
+        let parameterNames = getFunctionParameters(target, targetKey);
+        let paramName = parameterNames[parameterIndex];
+        Reflect.defineMetadata(ODataNavStepParameter, paramName, target, targetKey);
+    };
+})();
+
+/** Provides access to resource path parsing tree.
+ * @param target            The prototype of the class for an instance member
+ * @param targetKey         The name of the class method
+ * @param parameterIndex    The ordinal index of the parameter in the function’s parameter list
+ */
+export const path = (function path() {
+    return function (target, targetKey, parameterIndex: number) {
+        let parameterNames = getFunctionParameters(target, targetKey);
+        let paramName = parameterNames[parameterIndex];
+        Reflect.defineMetadata(ODataPathParameter, paramName, target, targetKey);
+    };
+})();
+
+/** Gives the decorated Resource path parameter.
+ * @param target    The prototype of the class for an instance member
+ * @param targetKey The name of the class method
+ */
+export function getPathParameter(target, targetKey) {
+    return Reflect.getMetadata(ODataPathParameter, target.prototype, targetKey);
+
+}
+
+/** Gives the decorated Navigation step (in Resource path)  parameter.
+ * @param target    The prototype of the class for an instance member
+ * @param targetKey The name of the class method
+ */
+export function getNavStepParameter(target, targetKey) {
+    return Reflect.getMetadata(ODataNavStepParameter, target.prototype, targetKey);
+
+}
 
 /** Gives the decorated query parameter.
  * @param target    The prototype of the class for an instance member
