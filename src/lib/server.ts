@@ -14,7 +14,7 @@ import * as odata from "./odata";
 import { ODataBase, IODataConnector } from "./odata";
 import { createMetadataJSON } from "./metadata";
 import { ODataProcessor, ODataProcessorOptions, ODataMetadataType } from "./processor";
-import { HttpRequestError, UnsupportedMediaTypeError } from "./error";
+import { HttpRequestError, UnsupportedMediaTypeError, NotImplementedError } from "./error";
 import { ContainerBase } from "./edm";
 import { Readable, Writable } from "stream";
 import * as async from "async";
@@ -66,7 +66,19 @@ function ensureODataHeaders(req, res, next?) {
         };
         let origsend = res.send;
         res.send = <any>((data) => {
-            if (typeof data == "object") data = JSON.stringify(data);
+            if (typeof data == "object") {
+                let v2: any;
+                if (Array.isArray(data.value)) {
+                    v2 = {
+                        d: {
+                            results: data.value
+                        }
+                    };
+                } else {
+                    v2 = { d: data.value };
+                }
+                data = JSON.stringify(v2);
+            }
             origsend.call(res, Buffer.from(data, bufferEncoding[charset]));
         });
     }
@@ -112,12 +124,14 @@ export class ODataServerBase extends Transform {
                         }
                         Object.assign(result, operation, { index: index });
                         if (operation.operations) { // nested batch, can be changeset inside batch
+                            if (operation.partType === "changeset") {
+                            }
                             async.mapValuesLimit(operation.operations, 5, iterateOperation, function (error, results) {
                                 invokeCallbackOnce(null, Object.assign({}, operation, { operations: results }));
                             });
                         } else {
 
-                           let fakeReq = Object.assign({}, req, {
+                            let fakeReq = Object.assign({}, req, {
                                 url: operation.resourcePath,
                                 originalUrl: operation.resourcePath,
                                 path: operation.resourcePath,
@@ -136,13 +150,16 @@ export class ODataServerBase extends Transform {
                                 result.statusCode = result.statusCode || 200;
                                 result.payload = data;
                                 invokeCallbackOnce(null, result);
-                                return fakeRes;
+                                return fakeRes; // return this
                             })
 
                             fakeRes = Object.assign({}, res, {
                                 setHeader: <any>((key, value) => {
                                     result.headers = result.headers || {};
                                     result.headers[key] = value;
+                                }),
+                                write: <any>(() => {
+                                    throw new HttpRequestError(500, "Streaming during batch processing is not implemented");
                                 }),
                                 end: endFn,
                                 send: endFn,
