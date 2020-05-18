@@ -117,7 +117,7 @@ export class ODataServerBase extends Transform {
                             });
                         } else {
 
-                            let fakeReq = Object.assign({}, req, {
+                           let fakeReq = Object.assign({}, req, {
                                 url: operation.resourcePath,
                                 originalUrl: operation.resourcePath,
                                 path: operation.resourcePath,
@@ -130,23 +130,23 @@ export class ODataServerBase extends Transform {
                                 protocol: req.protocol
                             })
 
-                            let fakeRes = Object.assign({}, res, {
+                            let fakeRes: any;
+
+                            let endFn = <any>((data: any, encoding: string, endCallback: express.NextFunction): any => {
+                                result.statusCode = result.statusCode || 200;
+                                result.payload = data;
+                                invokeCallbackOnce(null, result);
+                                return fakeRes;
+                            })
+
+                            fakeRes = Object.assign({}, res, {
                                 setHeader: <any>((key, value) => {
                                     result.headers = result.headers || {};
                                     result.headers[key] = value;
                                 }),
-                                end: <any>((data: any, encoding: string, endCallback: express.NextFunction): any => {
-                                    invokeCallbackOnce(null, { statusCode: result.statusCode || 200, payload: data });
-                                    return fakeRes;
-                                }),
-                                send: <any>((data) => {
-                                    invokeCallbackOnce(null, { statusCode: result.statusCode || 200, payload: data });
-                                    return fakeRes;
-                                }),
-                                json: <any>((data) => {
-                                    invokeCallbackOnce(null, { statusCode: result.statusCode || 200, payload: data });
-                                    return fakeRes;
-                                }),
+                                end: endFn,
+                                send: endFn,
+                                json: endFn,
                                 contentType: <any>((contentType) => {
                                     result.contentType = contentType;
                                 }),
