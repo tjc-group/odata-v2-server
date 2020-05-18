@@ -32,6 +32,51 @@ export interface ODataHttpContext {
     processor: ODataProcessor & Transform
 }
 
+function convertPayloadV2(data: any): any {
+    function mapValue(item: any): any {
+        return Object.keys(item).reduce((prev: any, property): any => {
+            switch (property) {
+                case "@odata.id": {
+                    prev.__metadata = prev.__metadata || {};
+                    prev.__metadata.uri = item[property];
+                    break;
+                }
+                case "@odata.type": {
+                    prev.__metadata = prev.__metadata || {};
+                    prev.__metadata.type = item[property];
+                    break;
+                }
+                default: {
+                    if (!/\@odata\./.test(property)) {
+                        prev[property] = item[property];
+                    }
+                }
+            }
+            return prev;
+        }, <any>{});
+    }
+
+    if (typeof data == "object") {
+        let v2: any;
+        if (typeof data.error == "object") {
+            v2 = data;
+        } else if (Array.isArray(data.value)) {
+            v2 = {
+                d: {
+                    results: data.value.map(mapValue)
+                }
+            };
+        } else if (typeof data.value == "object") {
+            v2 = { d: mapValue(data.value) };
+        } else {
+            v2 = { d: mapValue(data) };
+        }
+        return v2;
+    } else {
+        return data;
+    }
+}
+
 function ensureODataMetadataType(req, res) {
     let metadata: ODataMetadataType = ODataMetadataType.minimal;
     if (req.headers && req.headers.accept && req.headers.accept.indexOf("odata.metadata=") >= 0) {
@@ -66,48 +111,7 @@ function ensureODataHeaders(req, res, next?) {
         };
         let origsend = res.send;
         res.send = <any>((data) => {
-
-            function mapValue(item: any): any {
-                return Object.keys(item).reduce((prev: any, property): any => {
-                    switch (property) {
-                        case "@odata.id": {
-                            prev.__metadata = prev.__metadata || {};
-                            prev.__metadata.uri = item[property];
-                            break;
-                        }
-                        case "@odata.type": {
-                            prev.__metadata = prev.__metadata || {};
-                            prev.__metadata.type = item[property];
-                            break;
-                        }
-                        default: {
-                            if (!/\@odata\./.test(property)) {
-                                prev[property] = item[property];
-                            }
-                        }
-                    }
-                    return prev;
-                }, <any>{});
-            }
-
-            if (typeof data == "object") {
-                let v2: any;
-                if (typeof data.error == "object") {
-                    v2 = data;
-                } else
-                    if (Array.isArray(data.value)) {
-                        v2 = {
-                            d: {
-                                results: data.value.map(mapValue)
-                            }
-                        };
-                    } else if (typeof data.value == "object") {
-                        v2 = { d: mapValue(data.value) };
-                    } else {
-                        v2 = { d: mapValue(data) };
-                    }
-                data = JSON.stringify(v2);
-            }
+            data = JSON.stringify(convertPayloadV2(data));
             origsend.call(res, Buffer.from(data, bufferEncoding[charset]));
         });
     }
@@ -244,7 +248,7 @@ export class ODataServerBase extends Transform {
                                                     content += "HTTP/1.1 " + statusCode + " " + operation.error.message + "\r\n" +
                                                         "Content-Type: application/json;charset=utf-8\r\n\r\n" + payload + "\r\n";
                                                 } else {
-                                                    payload = JSON.stringify(operation.payload);
+                                                    payload = JSON.stringify(convertPayloadV2(operation.payload));
                                                     content += "HTTP/1.1 " + operation.statusCode + " OK\r\n" +
                                                         "Content-Type: " + (operation.contentType || "application/json;charset=utf-8") + "\r\n\r\n" + payload + "\r\n";
                                                 }
