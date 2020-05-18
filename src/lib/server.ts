@@ -7,7 +7,7 @@ import * as express from "express";
 import * as http from "http";
 import * as bodyParser from "body-parser";
 import * as cors from "cors";
-import { Transform, TransformOptions } from "stream";
+import { Transform, TransformOptions, Duplex } from "stream";
 import { ODataResult } from "./result";
 import { ODataController } from "./controller";
 import * as odata from "./odata";
@@ -28,7 +28,8 @@ export interface ODataHttpContext {
     host: string
     base: string
     request: express.Request & Readable
-    response: express.Response & Writable
+    response: express.Response & Writable,
+    processor: ODataProcessor & Transform
 }
 
 function ensureODataMetadataType(req, res) {

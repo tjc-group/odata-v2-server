@@ -430,14 +430,14 @@ export interface ODataProcessorOptions {
 }
 
 export class ODataProcessor extends Transform {
-    private serverType: typeof ODataServer
+    public serverType: typeof ODataServer
     private options: ODataProcessorOptions
     private ctrl: typeof ODataController
     private prevCtrl: typeof ODataController
     private instance: ODataController
-    private resourcePath: ResourcePathVisitor
+    public resourcePath: ResourcePathVisitor
     private workflow: any[]
-    private context: ODataHttpContext
+    public context: ODataHttpContext
     private method: string
     private url: any
     private query: any
@@ -460,6 +460,7 @@ export class ODataProcessor extends Transform {
         });
 
         this.context = context;
+        this.context.processor = this;
         this.serverType = server;
         this.options = options || <ODataProcessorOptions>{};
 

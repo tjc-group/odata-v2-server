@@ -883,7 +883,7 @@ Host: localhost:3003
     });
 
     describe("Non existent entity", () => {
-        it("should return cannot read property node error", () => {
+        it("should return Resource not found error", () => {
             return request.get(`http://localhost:3002/NonExistent`, (err, req, res) => {
                 expect(JSON.parse(res).error.message).to.equal("Resource not found.");
             })
