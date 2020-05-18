@@ -66,17 +66,46 @@ function ensureODataHeaders(req, res, next?) {
         };
         let origsend = res.send;
         res.send = <any>((data) => {
+
+            function mapValue(item: any): any {
+                return Object.keys(item).reduce((prev: any, property): any => {
+                    switch (property) {
+                        case "@odata.id": {
+                            prev.__metadata = prev.__metadata || {};
+                            prev.__metadata.uri = item[property];
+                            break;
+                        }
+                        case "@odata.type": {
+                            prev.__metadata = prev.__metadata || {};
+                            prev.__metadata.type = item[property];
+                            break;
+                        }
+                        default: {
+                            if (!/\@odata\./.test(property)) {
+                                prev[property] = item[property];
+                            }
+                        }
+                    }
+                    return prev;
+                }, <any>{});
+            }
+
             if (typeof data == "object") {
                 let v2: any;
-                if (Array.isArray(data.value)) {
-                    v2 = {
-                        d: {
-                            results: data.value
-                        }
-                    };
-                } else {
-                    v2 = { d: data.value };
-                }
+                if (typeof data.error == "object") {
+                    v2 = data;
+                } else
+                    if (Array.isArray(data.value)) {
+                        v2 = {
+                            d: {
+                                results: data.value.map(mapValue)
+                            }
+                        };
+                    } else if (typeof data.value == "object") {
+                        v2 = { d: mapValue(data.value) };
+                    } else {
+                        v2 = { d: mapValue(data) };
+                    }
                 data = JSON.stringify(v2);
             }
             origsend.call(res, Buffer.from(data, bufferEncoding[charset]));
