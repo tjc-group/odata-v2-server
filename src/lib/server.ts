@@ -102,14 +102,17 @@ export class ODataServerBase extends Transform {
 
                         function invokeCallbackOnce(err: any, result?: any) {
                             if (cb) {
-                                cb.apply(null, arguments);
+                                if (result) {
+                                    result = Object.assign({}, operation, result)
+                                }
+                                cb.call(null, err, result);
                                 cb = undefined;
                             }
                         }
                         Object.assign(result, operation, { index: index });
                         if (operation.operations) { // nested batch, can be changeset inside batch
                             async.mapValuesLimit(operation.operations, 5, iterateOperation, function (error, results) {
-                                invokeCallbackOnce(null, Object.assign(result, { operations: results }));
+                                invokeCallbackOnce(null, Object.assign({}, operation, { operations: results }));
                             });
                         } else {
 
@@ -132,15 +135,15 @@ export class ODataServerBase extends Transform {
                                     result.headers[key] = value;
                                 }),
                                 end: <any>((data: any, encoding: string, endCallback: express.NextFunction): any => {
-                                    invokeCallbackOnce(null, Object.assign(result, { statusCode: result.statusCode || 200, payload: data }));
+                                    invokeCallbackOnce(null, { statusCode: result.statusCode || 200, payload: data });
                                     return fakeRes;
                                 }),
                                 send: <any>((data) => {
-                                    invokeCallbackOnce(null, Object.assign(result, { statusCode: result.statusCode || 200, payload: data }));
+                                    invokeCallbackOnce(null, { statusCode: result.statusCode || 200, payload: data });
                                     return fakeRes;
                                 }),
                                 json: <any>((data) => {
-                                    invokeCallbackOnce(null, Object.assign(result, { statusCode: result.statusCode || 200, payload: data }));
+                                    invokeCallbackOnce(null, { statusCode: result.statusCode || 200, payload: data });
                                     return fakeRes;
                                 }),
                                 contentType: <any>((contentType) => {
@@ -153,7 +156,7 @@ export class ODataServerBase extends Transform {
                             })
 
                             handler(fakeReq, fakeRes, function (error) {
-                                invokeCallbackOnce(null, Object.assign(result, { error: error }));
+                                invokeCallbackOnce(null, { error: error });
                             });
                         }
                     }

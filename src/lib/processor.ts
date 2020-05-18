@@ -1315,7 +1315,8 @@ export class ODataProcessor extends Transform {
                     await this.__convertEntity(context, result.body, elementType, includes, select);
                 }
             }
-        } else if (typeof result.body != "undefined" && result.body) {
+        // } else if (typeof result.body != "undefined" && result.body) {
+        } else if (result.body !== undefined) {
             context.value = result.body;
         }
         result.body = context;
