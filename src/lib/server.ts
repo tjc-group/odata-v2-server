@@ -200,7 +200,7 @@ export class ODataServerBase extends Transform {
                                                 } else {
                                                     payload = JSON.stringify(operation.payload);
                                                     content += "HTTP/1.1 " + operation.statusCode + " OK\r\n" +
-                                                        "Content-Type: application/json;charset=utf-8\r\n\r\n" + payload + "\r\n";
+                                                        "Content-Type: " + (operation.contentType || "application/json;charset=utf-8") + "\r\n\r\n" + payload + "\r\n";
                                                 }
                                             }
                                             return "--" + boundary + "\r\n" + content;
