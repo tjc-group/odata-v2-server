@@ -393,7 +393,7 @@ export async function escape(value:any, type:any, serializer?:Function){
     if (typeof value == "undefined" || value == null) return value;
     switch (type){
         case "Edm.Binary":
-            return value.toString("hex");
+            return `X'${value.toString("hex").toUpperCase()}'`;
         case "Edm.Boolean":
         case "Edm.Byte":
         case "Edm.Decimal":
