@@ -48,7 +48,8 @@ function convertPayloadV2(data: any): any {
                 }
                 default: {
                     if (!/\@odata\./.test(property)) {
-                        prev[property] = item[property];
+                        let value = item[property];
+                        prev[property] = Buffer.isBuffer(value) ? value.toString("base64") : value;
                     }
                 }
             }
