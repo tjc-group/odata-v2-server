@@ -72,6 +72,9 @@ function convertPayloadV2(data: any): any {
         } else {
             v2 = { d: mapValue(data) };
         }
+        if (typeof data["@odata.count"] == "number") {
+            v2.d.__count = data["@odata.count"];
+        }
         return v2;
     } else {
         return data;
