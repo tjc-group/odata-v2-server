@@ -416,6 +416,7 @@ export class ODataServerBase extends Transform {
     }
 
     static createProcessor(context: any, options?: ODataProcessorOptions) {
+        this.clearControllerInstanceCache();
         return new ODataProcessor(context, this, options);
     }
 
@@ -441,13 +442,24 @@ export class ODataServerBase extends Transform {
     static addController(controller: typeof ODataController, entitySetName?: string | boolean, elementType?: Function) {
         odata.controller(controller, <string>entitySetName, elementType)(this);
     }
+
+    static controllerInstanceCache: any = {};
+
+    static clearControllerInstanceCache() {
+        this.controllerInstanceCache = {};
+    }        
+
     static getController(elementType: Function) {
         for (let i in this.prototype) {
             if (this.prototype[i] &&
                 this.prototype[i].prototype &&
                 this.prototype[i].prototype instanceof ODataController &&
                 this.prototype[i].prototype.elementType == elementType) {
-                return this.prototype[i];
+                let instance = this.controllerInstanceCache[this.prototype[i].name];
+                if (!instance) {
+                    this.controllerInstanceCache[this.prototype[i].name] = instance = new this.prototype[i]();
+                }
+                return instance;
             }
         }
         return null;
