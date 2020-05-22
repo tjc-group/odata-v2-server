@@ -146,7 +146,7 @@ function isDescendantOf(this: any, name: string): boolean {
     }
 }
 
-let instanceCache = {};
+let controllerInstanceCache = {};
 
 const fnCaller = function (this: any, fn, params) {
     params = params || {};
@@ -157,9 +157,9 @@ const fnCaller = function (this: any, fn, params) {
     }
     let instance = this;
     if (isDescendantOf.call(instance, "ODataController")) {
-        instance = instanceCache[this.name];
+        instance = controllerInstanceCache[this.name];
         if (!instance) {
-            instance = instanceCache[this.name] = new this();
+            instance = controllerInstanceCache[this.name] = new this();
         }
     }
     return fn.apply(instance, fnParams);
@@ -472,6 +472,10 @@ export class ODataProcessor extends Transform {
     private streamInlineCount: number;
     private elementType: any;
     private resultCount = 0;
+
+    static clearControllerInstanceCache() {
+        controllerInstanceCache = {};
+    }
 
     constructor(context, server, options?: ODataProcessorOptions) {
         super(<TransformOptions>{
@@ -1622,8 +1626,9 @@ export class ODataProcessor extends Transform {
     }
 
     private async __applyParams(container: any, name: string, params: any, navStep?: NavigationPart, queryString?: string | Token, result?: any, include?) {
-        let pathParam, navStepParam, queryParam, filterParam, contextParam, streamParam, resultParam, idParam, bodyParam;
+        let includeParam, pathParam, navStepParam, queryParam, filterParam, contextParam, streamParam, resultParam, idParam, bodyParam;
 
+        includeParam = odata.getIncludeParameter(container, name);
         pathParam = odata.getPathParameter(container, name);
         navStepParam = odata.getNavStepParameter(container, name);
         queryParam = odata.getQueryParameter(container, name);
@@ -1636,6 +1641,10 @@ export class ODataProcessor extends Transform {
         let typeParam = odata.getTypeParameter(container, name);
 
         let elementType = (result && result.elementType) || (this.ctrl && this.ctrl.prototype.elementType) || null;
+
+        if (includeParam) {
+            params[includeParam] = include;
+        }
 
         if (navStepParam) {
             params[navStepParam] = navStep;
