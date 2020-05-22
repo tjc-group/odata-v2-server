@@ -162,7 +162,7 @@ const fnCaller = function (this: any, fn, params) {
             instance = instanceCache[this.name] = new this();
         }
     }
-    return fn.apply(this, fnParams);
+    return fn.apply(instance, fnParams);
 };
 
 const ODataRequestMethods: string[] = ["get", "post", "put", "patch", "delete"];
