@@ -136,12 +136,31 @@ const createODataContext = function (context: ODataHttpContext, entitySets, serv
     return odataContextBase + odataContext;
 }
 
+function isDescendantOf(this: any, name: string): boolean {
+    // ODataController
+    var proto = Object.getPrototypeOf(this);
+    if (proto && proto.name == name) {
+        return true;
+    } else {
+        return !proto || isDescendantOf.call(proto, name);
+    }
+}
+
+let instanceCache = {};
+
 const fnCaller = function (this: any, fn, params) {
     params = params || {};
     let fnParams: any[];
     fnParams = getFunctionParameters(fn);
     for (var i = 0; i < fnParams.length; i++) {
         fnParams[i] = params[fnParams[i]];
+    }
+    let instance = this;
+    if (isDescendantOf.call(instance, "ODataController")) {
+        instance = instanceCache[this.name];
+        if (!instance) {
+            instance = instanceCache[this.name] = new this();
+        }
     }
     return fn.apply(this, fnParams);
 };
