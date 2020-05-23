@@ -922,8 +922,8 @@ export class ODataProcessor extends Transform {
                                 }
                             }
                         }
-                        await this.__applyParams(ctrl, fnDesc.call, params, part, queryString, undefined, include);
-                    } else await this.__applyParams(ctrl, method, params, part, queryString, undefined, include);
+                        await this.__applyParams(ctrl, fnDesc.call, params, part, queryString, data, include);
+                    } else await this.__applyParams(ctrl, method, params, part, queryString, data, include);
                 } else fn = filter;
 
                 if (!include) this.__enableStreaming(part);
