@@ -9,6 +9,8 @@ const EdmProperties:string = "edm:properties";
 const EdmKeyProperties:string = "edm:keyproperties";
 const EdmKeyProperty:string = "edm:keyproperty";
 const EdmForeignKeys:string = "edm:foreignkeys";
+const EdmPrincipalKeys: string = "edm:principalkeys";
+const EdmDependentKeys: string = "edm:dependentkeys";
 const EdmComputedProperty:string = "edm:computedproperty";
 const EdmNullableProperty:string = "edm:nullableproperty";
 const EdmPartnerProperty:string = "edm:partnerproperty";
@@ -1095,6 +1097,29 @@ export function getAnnotations(target:Function, targetKey?:string):any[]{
 
 /** ?????????? */
 /** Edm.ForeignKey decorator for describing properties as foreign keys */
+export function PrincipalKey(...keys: string[]) {
+    return function (target: any, targetKey?: string) {
+        if (typeof target == "function") {
+            register(target);
+        }
+        let existingKeys: any[] = Reflect.getOwnMetadata(EdmPrincipalKeys, target, targetKey) || [];
+        existingKeys = keys.concat(existingKeys);
+        Reflect.defineMetadata(EdmPrincipalKeys, existingKeys, target, targetKey);
+    };
+}/** ?????????? */
+/** ?????????? */
+/** Edm.ForeignKey decorator for describing properties as foreign keys */
+export function DependentKey(...keys: string[]) {
+    return function (target: any, targetKey?: string) {
+        if (typeof target == "function") {
+            register(target);
+        }
+        let existingKeys: any[] = Reflect.getOwnMetadata(EdmDependentKeys, target, targetKey) || [];
+        existingKeys = keys.concat(existingKeys);
+        Reflect.defineMetadata(EdmDependentKeys, existingKeys, target, targetKey);
+    };
+}/** ?????????? */
+/** Edm.ForeignKey decorator for describing properties as foreign keys */
 export function ForeignKey(...keys:string[]){
     return function(target:any, targetKey?:string){
         if (typeof target == "function"){
@@ -1109,6 +1134,14 @@ export function ForeignKey(...keys:string[]){
 /** Edm.ForeignKey decorator for describing properties as foreign keys */
 export function getForeignKeys(target:Function, targetKey?:string):string[]{
     return Reflect.getOwnMetadata(EdmForeignKeys, target.prototype, targetKey) || Reflect.getOwnMetadata(EdmForeignKeys, target, targetKey) || [];
+}
+
+export function getPrincipalKeys(target: Function, targetKey?: string): string[] {
+    return Reflect.getOwnMetadata(EdmPrincipalKeys, target.prototype, targetKey) || Reflect.getOwnMetadata(EdmForeignKeys, target, targetKey) || [];
+}
+
+export function getDependentKeys(target: Function, targetKey?: string): string[] {
+    return Reflect.getOwnMetadata(EdmDependentKeys, target.prototype, targetKey) || Reflect.getOwnMetadata(EdmForeignKeys, target, targetKey) || [];
 }
 
 /** ?????????? */

@@ -156,7 +156,7 @@ const fnCaller = function (this: any, fn, params) {
         fnParams[i] = params[fnParams[i]];
     }
     let instance = this;
-    if (isDescendantOf.call(instance, "ODataController")) {
+    if (typeof this == "function" && isDescendantOf.call(instance, "ODataController")) {
         instance = controllerInstanceCache[this.name];
         if (!instance) {
             instance = controllerInstanceCache[this.name] = new this();
@@ -1545,11 +1545,22 @@ export class ODataProcessor extends Transform {
                 ctrl = this.serverType.getController(navigationType);
             } else {
                 ctrl = this.serverType.getController(navigationType);
+                let foreignKeys = Edm.getForeignKeys(elementType, include.navigationProperty);
+                let principalKeys = Edm.getPrincipalKeys(elementType, include.navigationProperty);
+                let dependentKeys = Edm.getDependentKeys(elementType, include.navigationProperty);
+                let part: any = {};
+
+                result.foreignKeys = {};
+
+                result.relationKeys = dependentKeys.reduce((prev, key, index): any => {
+                    if (principalKeys[index]) {
+                        prev[key] = principalKeys[index];
+                    }
+                    return prev;
+                },{});
+
                 if (isCollection) {
-                    let foreignKeys = Edm.getForeignKeys(elementType, include.navigationProperty);
                     let typeKeys = Edm.getKeyProperties(navigationType);
-                    result.foreignKeys = {};
-                    let part: any = {};
                     let foreignFilter = (await Promise.all(foreignKeys.map(async (key) => {
                         result.foreignKeys[key] = result[typeKeys[0]];
                         return `${key} eq ${await Edm.escape(result[typeKeys[0]], Edm.getTypeName(navigationType, key, this.serverType.container))}`;
@@ -1557,9 +1568,6 @@ export class ODataProcessor extends Transform {
                     if (part.key) part.key.forEach((key) => params[key.name] = key.value);
                     navigationResult = await this.__read(ctrl, part, params, result, foreignFilter, navigationType, include, select);
                 } else {
-                    const foreignKeys = Edm.getForeignKeys(elementType, include.navigationProperty);
-                    result.foreignKeys = {};
-                    let part: any = {};
                     part.key = foreignKeys.map(key => {
                         result.foreignKeys[key] = result[key];
                         return {
@@ -1626,7 +1634,7 @@ export class ODataProcessor extends Transform {
     }
 
     private async __applyParams(container: any, name: string, params: any, navStep?: NavigationPart, queryString?: string | Token, result?: any, include?) {
-        let includeParam, pathParam, navStepParam, queryParam, filterParam, contextParam, streamParam, resultParam, idParam, bodyParam;
+        let includeParam, pathParam, navStepParam, queryParam, filterParam, contextParam, streamParam, resultParam, idParam, bodyParam, odataResultParam;
 
         includeParam = odata.getIncludeParameter(container, name);
         pathParam = odata.getPathParameter(container, name);
@@ -1635,6 +1643,7 @@ export class ODataProcessor extends Transform {
         filterParam = odata.getFilterParameter(container, name);
         contextParam = odata.getContextParameter(container, name);
         streamParam = odata.getStreamParameter(container, name);
+        odataResultParam = odata.getODataResultParameter(container, name);
         resultParam = odata.getResultParameter(container, name);
         idParam = odata.getIdParameter(container, name);
         bodyParam = odata.getBodyParameter(container, name);
@@ -1715,6 +1724,10 @@ export class ODataProcessor extends Transform {
 
         if (resultParam) {
             params[resultParam] = result instanceof ODataResult ? result.body : result;
+        }
+
+        if (odataResultParam && result instanceof ODataResult) {
+            params[odataResultParam] = result;
         }
 
         if (idParam) {

@@ -1,6 +1,6 @@
 {
   "name": "@tjc-group/odata-v2-server",
-  "version": "0.0.37",
+  "version": "0.0.38",
   "description": "OData V2 Server - downgrade from V4 of Jaystack",
   "main": "build/lib/index.js",
   "typings": "build/lib/index",
@@ -120,7 +120,7 @@
     "mssql": "^4.1.0",
     "npm-watch": "^0.3.0",
     "nyc": "^12.0.2",
-    "odata-v4-inmemory": "^0.1.9",
+    "@tjc-group/odata-v2-inmemory": "^0.1.10",
     "odata-v4-mongodb": "^0.1.12",
     "remap-istanbul": "^0.11.1",
     "request": "^2.87.0",

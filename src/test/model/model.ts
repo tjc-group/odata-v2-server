@@ -29,6 +29,8 @@ export class Product{
     @Edm.ForeignKey("CategoryId")
     @Edm.EntityType(Edm.ForwardRef(() => Category))
     @Edm.Partner("Products")
+    @Edm.PrincipalKey("CategoryId")
+    @Edm.DependentKey("_id")
     Category:Category
 
     @Edm.Boolean
@@ -102,6 +104,8 @@ export class Category{
     @Edm.ForeignKey("CategoryId")
     @Edm.Collection(Edm.EntityType(Product))
     @Edm.Partner("Category")
+    @Edm.PrincipalKey("_id")
+    @Edm.DependentKey("CategoryId")
     Products:Product[]
 
     @Edm.Collection(Edm.String)

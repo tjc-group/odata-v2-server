@@ -27,6 +27,7 @@ const ODataBodyParameter: string = "odata:bodyparameter";
 const ODataContextParameter: string = "odata:contextparameter";
 const ODataStreamParameter: string = "odata:streamparameter";
 const ODataResultParameter: string = "odata:resultparameter";
+const ODataRawResultParameter: string = "odata:odataresultparameter";
 const ODataIdParameter: string = "odata:idparameter";
 const ODataTypeParameter: string = "odata:typeparameter";
 const ODataNamespace: string = "odata:namespace";
@@ -699,6 +700,20 @@ export function getStreamParameter(target, targetKey) {
     return Reflect.getMetadata(ODataStreamParameter, target.prototype, targetKey);
 }
 
+
+/** Gives the result from the last part from the resource path of the OData URL. This ensures the access to an entity in context of your action or function.
+ * @param target            The prototype of the class for an instance member
+ * @param targetKey         The name of the class method
+ * @param parameterIndex    The ordinal index of the parameter in the function’s parameter list
+ */
+export const odataresult = (function result() {
+    return function (target, targetKey, parameterIndex: number) {
+        let parameterNames = getFunctionParameters(target, targetKey);
+        let paramName = parameterNames[parameterIndex];
+        Reflect.defineMetadata(ODataRawResultParameter, paramName, target, targetKey);
+    };
+})();
+
 /** Gives the result from the last part from the resource path of the OData URL. This ensures the access to an entity in context of your action or function.
  * @param target            The prototype of the class for an instance member
  * @param targetKey         The name of the class method
@@ -711,6 +726,14 @@ export const result = (function result() {
         Reflect.defineMetadata(ODataResultParameter, paramName, target, targetKey);
     };
 })();
+
+/** Gives the decorated result parameter.
+ * @param target    The prototype of the class for an instance member
+ * @param targetKey The name of the class method
+ */
+export function getODataResultParameter(target, targetKey) {
+    return Reflect.getMetadata(ODataRawResultParameter, target.prototype, targetKey);
+}
 
 /** Gives the decorated result parameter.
  * @param target    The prototype of the class for an instance member
