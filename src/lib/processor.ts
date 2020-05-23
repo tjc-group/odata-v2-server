@@ -694,6 +694,17 @@ export class ODataProcessor extends Transform {
                         return result;
                     });
                 } else {
+                    let principalKeys = Edm.getPrincipalKeys(resultType, part.name);
+                    let dependentKeys = Edm.getDependentKeys(resultType, part.name);
+                    if (Array.isArray(dependentKeys) && Array.isArray(principalKeys)) {
+                        (<any>part).relationKeys = dependentKeys.reduce((prev: any, key: string, index: number): any => {
+                            if (principalKeys[index]) {
+                                prev[key] = principalKeys[index];
+                            }
+                            return prev;
+                        }, {});
+                    }
+
                     let ctrl = this.serverType.getController(elementType);
                     let foreignKeys = Edm.getForeignKeys(resultType, part.name);
                     let typeKeys = Edm.getKeyProperties(resultType);
@@ -746,6 +757,17 @@ export class ODataProcessor extends Transform {
                         return result;
                     });
                 } else {
+                    let principalKeys = Edm.getPrincipalKeys(resultType, part.name);
+                    let dependentKeys = Edm.getDependentKeys(resultType, part.name);
+                    if (Array.isArray(dependentKeys) && Array.isArray(principalKeys)) {
+                        (<any>part).relationKeys = dependentKeys.reduce((prev: any, key: string, index: number): any => {
+                            if (principalKeys[index]) {
+                                prev[key] = principalKeys[index];
+                            }
+                            return prev;
+                        }, {});
+                    }
+
                     let ctrl = this.serverType.getController(elementType);
                     let foreignKeys = Edm.getForeignKeys(resultType, part.name);
                     result.foreignKeys = {};
@@ -1544,20 +1566,22 @@ export class ODataProcessor extends Transform {
                 await this.__appendODataContext(navigationResult, navigationType, include.includes, select);
                 ctrl = this.serverType.getController(navigationType);
             } else {
-                ctrl = this.serverType.getController(navigationType);
-                let foreignKeys = Edm.getForeignKeys(elementType, include.navigationProperty);
+                let part: any = {};
                 let principalKeys = Edm.getPrincipalKeys(elementType, include.navigationProperty);
                 let dependentKeys = Edm.getDependentKeys(elementType, include.navigationProperty);
-                let part: any = {};
+                if (Array.isArray(dependentKeys) && Array.isArray(principalKeys)) {
+                    part.relationKeys = dependentKeys.reduce((prev, key, index): any => {
+                        if (principalKeys[index]) {
+                            prev[key] = principalKeys[index];
+                        }
+                        return prev;
+                    }, {});
+                }
+
+                ctrl = this.serverType.getController(navigationType);
+                let foreignKeys = Edm.getForeignKeys(elementType, include.navigationProperty);
 
                 result.foreignKeys = {};
-
-                result.relationKeys = dependentKeys.reduce((prev, key, index): any => {
-                    if (principalKeys[index]) {
-                        prev[key] = principalKeys[index];
-                    }
-                    return prev;
-                },{});
 
                 if (isCollection) {
                     let typeKeys = Edm.getKeyProperties(navigationType);
