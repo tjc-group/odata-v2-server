@@ -146,8 +146,6 @@ function isDescendantOf(this: any, name: string): boolean {
     }
 }
 
-let controllerInstanceCache = {};
-
 const fnCaller = function (this: any, fn, params) {
     params = params || {};
     let fnParams: any[];
@@ -155,13 +153,7 @@ const fnCaller = function (this: any, fn, params) {
     for (var i = 0; i < fnParams.length; i++) {
         fnParams[i] = params[fnParams[i]];
     }
-    let instance = this;
-    if (typeof this == "function" && isDescendantOf.call(instance, "ODataController")) {
-        instance = controllerInstanceCache[this.name];
-        if (!instance) {
-            instance = controllerInstanceCache[this.name] = new this();
-        }
-    }
+    let instance = ODataProcessor.getControllerInstance.call(this);
     return fn.apply(instance, fnParams);
 };
 
@@ -473,8 +465,21 @@ export class ODataProcessor extends Transform {
     private elementType: any;
     private resultCount = 0;
 
+    private static controllerInstanceCache = {};
+
     static clearControllerInstanceCache() {
-        controllerInstanceCache = {};
+        ODataProcessor.controllerInstanceCache = {};
+    }
+
+    static getControllerInstance(this: any) {
+        let instance = this;
+        if (typeof this == "function" && isDescendantOf.call(this, "ODataController")) {
+            instance = ODataProcessor.controllerInstanceCache[this.name];
+            if (!instance) {
+                instance = ODataProcessor.controllerInstanceCache[this.name] = new this();
+            }
+        }
+        return instance;
     }
 
     constructor(context, server, options?: ODataProcessorOptions) {

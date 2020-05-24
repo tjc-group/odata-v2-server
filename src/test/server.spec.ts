@@ -567,7 +567,7 @@ export function testFactory(createTest: any) {
             contentType: "application/json"
         });
 
-        createTest("should return single product using generator function that calls another generator function", TestServer, "GET /GeneratorProducts('578f2b8c12eaebabec4af23c')", {
+        createTest("should return single product using generator function that calls another generator function", TestServer, "GET /GeneratorProducts(X'578f2b8c12eaebabec4af23c')", {
             statusCode: 200,
             body: {
                 "@odata.context": "http://localhost/$metadata#GeneratorProducts/$entity",
