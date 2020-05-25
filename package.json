@@ -1,6 +1,6 @@
 {
   "name": "@tjc-group/odata-v2-server",
-  "version": "0.0.41",
+  "version": "0.0.42",
   "description": "OData V2 Server - downgrade from V4 of Jaystack",
   "main": "build/lib/index.js",
   "typings": "build/lib/index",
@@ -62,7 +62,7 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/thelenilson/odata-v4-server.git"
+    "url": "git+https://github.com/tjc-group/odata-v2-server.git"
   },
   "keywords": [
     "OData",
