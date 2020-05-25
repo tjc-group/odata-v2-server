@@ -955,6 +955,11 @@ export class ODataProcessor extends Transform {
 
                 if (!include) this.__enableStreaming(part);
 
+                let contextParam = odata.getContextParameter(ctrl, fn.name);
+                if (contextParam) {
+                    params[contextParam] = this.context;
+                }
+
                 let currentResult: any;
                 switch (method) {
                     case "get":
@@ -968,6 +973,7 @@ export class ODataProcessor extends Transform {
                         let body = data ? Object.assign(this.body || {}, data.foreignKeys) : this.body;
                         let bodyParam = odata.getBodyParameter(ctrl, fn.name);
                         let typeParam = odata.getTypeParameter(ctrl, fn.name);
+
                         if (typeParam) {
                             params[typeParam] = (body["@odata.type"] || (`${(<any>ctrl.prototype.elementType).namespace}.${(<any>ctrl.prototype.elementType).name}`)).replace(/^#/, "");
                         }
