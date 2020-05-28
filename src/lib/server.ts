@@ -49,7 +49,17 @@ function convertPayloadV2(data: any): any {
                 default: {
                     if (!/\@odata\./.test(property)) {
                         let value = item[property];
-                        prev[property] = Buffer.isBuffer(value) ? value.toString("base64") : value;
+                        if (Array.isArray(value) && value.length === 1 && value[0].results) {
+                            value = value[0];
+                        } else if (Buffer.isBuffer(value)) {
+                            value = value.toString("base64");
+                        } else if (value && typeof value === "object") {
+                            let keys = Object.keys(value);
+                            if (keys.length === 1 && keys[0] === "value") {
+                                value = value.value;
+                            }
+                        }
+                        prev[property] = value;
                     }
                 }
             }

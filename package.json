@@ -1,6 +1,6 @@
 {
   "name": "@tjc-group/odata-v2-server",
-  "version": "0.0.43",
+  "version": "0.0.44",
   "description": "OData V2 Server - downgrade from V4 of Jaystack",
   "main": "build/lib/index.js",
   "typings": "build/lib/index",
