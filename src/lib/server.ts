@@ -32,65 +32,6 @@ export interface ODataHttpContext {
     processor: ODataProcessor & Transform
 }
 
-function convertPayloadV2(data: any): any {
-    function mapValue(item: any): any {
-        return Object.keys(item).reduce((prev: any, property): any => {
-            switch (property) {
-                case "@odata.id": {
-                    prev.__metadata = prev.__metadata || {};
-                    prev.__metadata.uri = item[property];
-                    break;
-                }
-                case "@odata.type": {
-                    prev.__metadata = prev.__metadata || {};
-                    prev.__metadata.type = item[property];
-                    break;
-                }
-                default: {
-                    if (!/\@odata\./.test(property)) {
-                        let value = item[property];
-                        if (Array.isArray(value) && value.length === 1 && value[0].results) {
-                            value = value[0];
-                        } else if (Buffer.isBuffer(value)) {
-                            value = value.toString("base64");
-                        } else if (value && typeof value === "object") {
-                            let keys = Object.keys(value);
-                            if (keys.length === 1 && keys[0] === "value") {
-                                value = value.value;
-                            }
-                        }
-                        prev[property] = value;
-                    }
-                }
-            }
-            return prev;
-        }, <any>{});
-    }
-
-    if (typeof data == "object") {
-        let v2: any;
-        if (typeof data.error == "object") {
-            v2 = data;
-        } else if (Array.isArray(data.value)) {
-            v2 = {
-                d: {
-                    results: data.value.map(mapValue)
-                }
-            };
-        } else if (typeof data.value == "object") {
-            v2 = { d: mapValue(data.value) };
-        } else {
-            v2 = { d: mapValue(data) };
-        }
-        if (typeof data["@odata.count"] == "number") {
-            v2.d.__count = data["@odata.count"];
-        }
-        return v2;
-    } else {
-        return data;
-    }
-}
-
 function ensureODataMetadataType(req, res) {
     let metadata: ODataMetadataType = ODataMetadataType.minimal;
     if (req.headers && req.headers.accept && req.headers.accept.indexOf("odata.metadata=") >= 0) {
@@ -125,7 +66,7 @@ function ensureODataHeaders(req, res, next?) {
         };
         let origsend = res.send;
         res.send = <any>((data) => {
-            data = JSON.stringify(convertPayloadV2(data));
+            if (typeof data == "object") data = JSON.stringify(data);
             origsend.call(res, Buffer.from(data, bufferEncoding[charset]));
         });
     }
@@ -262,7 +203,7 @@ export class ODataServerBase extends Transform {
                                                     content += "HTTP/1.1 " + statusCode + " " + operation.error.message + "\r\n" +
                                                         "Content-Type: application/json;charset=utf-8\r\n\r\n" + payload + "\r\n";
                                                 } else {
-                                                    payload = JSON.stringify(convertPayloadV2(operation.payload));
+                                                    payload = JSON.stringify(operation.payload);
                                                     content += "HTTP/1.1 " + operation.statusCode + " OK\r\n" +
                                                         "Content-Type: " + (operation.contentType || "application/json;charset=utf-8") + "\r\n\r\n" + payload + "\r\n";
                                                 }
@@ -302,7 +243,8 @@ export class ODataServerBase extends Transform {
                     request: req,
                     response: res
                 }, <ODataProcessorOptions>{
-                    metadata: res["metadata"]
+                    metadata: res["metadata"],
+                    v2payload: true
                 });
                 processor.on("header", (headers) => {
                     for (let prop in headers) {

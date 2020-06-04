@@ -435,9 +435,10 @@ export enum ODataMetadataType {
 }
 
 export interface ODataProcessorOptions {
-    disableEntityConversion: boolean
-    metadata: ODataMetadataType
-    objectMode: boolean
+    disableEntityConversion?: boolean
+    metadata?: ODataMetadataType
+    objectMode?: boolean
+    v2payload?: boolean
 }
 
 export class ODataProcessor extends Transform {
@@ -1501,13 +1502,16 @@ export class ODataProcessor extends Transform {
                         }
                         context[prop] = value;
                     } else {
-                        if (this.options.metadata == ODataMetadataType.full) {
+                        if (this.options.metadata != ODataMetadataType.none) {
                             if (Edm.isEntityType(elementType, prop)) {
                                 if ((!includes || (includes && !includes[prop]))) {
                                     metadata[`${prop}@odata.associationLink`] = `${context["@odata.id"]}/${prop}/$ref`;
                                     metadata[`${prop}@odata.navigationLink`] = `${context["@odata.id"]}/${prop}`;
                                 }
-                            } else if (type != "Edm.String" && type != "Edm.Boolean") {
+                            }
+                        }
+                        if (this.options.metadata == ODataMetadataType.full) {
+                            if (type != "Edm.String" && type != "Edm.Boolean") {
                                 let typeName = Edm.getTypeName(elementType, prop, this.serverType.container);
                                 if (typeof type == "string" && type.indexOf("Edm.") == 0) typeName = typeName.replace(/Edm\./, "");
                                 context[`${prop}@odata.type`] = `#${typeName}`;
@@ -1625,7 +1629,7 @@ export class ODataProcessor extends Transform {
             }
         }
         delete navigationResult.body["@odata.context"];
-        if (this.options.metadata == ODataMetadataType.full) {
+        if (this.options.metadata != ODataMetadataType.none) {
             context[`${prop}@odata.associationLink`] = `${context["@odata.id"]}/${prop}/$ref`;
             context[`${prop}@odata.navigationLink`] = `${context["@odata.id"]}/${prop}`;
         }
@@ -1778,12 +1782,104 @@ export class ODataProcessor extends Transform {
         }
     }
 
+    protected __convertPayloadV2(data: any): any {
+        function mapValue(item: any): any {
+            return Object.keys(item).reduce((prev: any, property): any => {
+                switch (property) {
+                    case "@odata.id": {
+                        prev.__metadata = prev.__metadata || {};
+                        prev.__metadata.uri = item[property];
+                        break;
+                    }
+                    case "@odata.type": {
+                        prev.__metadata = prev.__metadata || {};
+                        let value: string = item[property];
+                        if (/^\#/.test(value)) {
+                            value = value.substr(1);
+                        }
+                        prev.__metadata.type = value;
+                        break;
+                    }
+                    default: {
+                        const linkMask = /^(\w+)\@odata\.(navigationLink|associationLink|type)/;
+                        let value = item[property];
+                        if (linkMask.test(property)) {
+                            const [_, navProperty, linkType] = property.match(linkMask);
+                            if (linkType == "navigationLink") {
+                                if (!item[navProperty]) {
+                                    item[navProperty] = {
+                                        __deferred: {
+                                            uri: value
+                                        }
+                                    };
+                                    prev[navProperty] = item[navProperty];
+                                }
+                            }
+                        } else if (!/\@odata\./.test(property)) {
+                            if (Array.isArray(value) && value.length === 1 && value[0].results) {
+                                value = value[0];
+                            } else if (Buffer.isBuffer(value)) {
+                                value = value.toString("base64");
+                            } else if (value && typeof value === "object") {
+                                let keys = Object.keys(value);
+                                if (keys.length === 1 && keys[0] === "value") {
+                                    value = value.value;
+                                }
+                            }
+                            prev[property] = value;
+                        }
+                    }
+                }
+                return prev;
+            }, <any>{});
+        }
+
+        if (typeof data == "object") {
+            let v2: any;
+            if (typeof data.error == "object") {
+                v2 = data;
+            } else if (Array.isArray(data.value)) {
+                v2 = {
+                    d: {
+                        results: data.value.map(mapValue)
+                    }
+                };
+            } else if (typeof data.value == "object") {
+                v2 = { d: mapValue(data.value) };
+            } else {
+                v2 = { d: mapValue(data) };
+            }
+            if (typeof data["@odata.count"] == "number") {
+                v2.d.__count = data["@odata.count"];
+            }
+            return v2;
+        } else {
+            return data;
+        }
+    }
+
     async execute(body?: any): Promise<ODataResult> {
         this.body = body;
         let next = await this.workflow.shift().call(this, body);
         while (this.workflow.length > 0) {
             next = await this.workflow.shift().call(this, next);
         }
-        return next;
+        if (this.options.v2payload) {
+            if (!isPromise(next)) {
+                next = Promise.resolve(next);
+            }
+            return new Promise((resolve, reject) => {
+                next
+                    .then((result) => {
+                        result.body = this.__convertPayloadV2(result.body);
+                        resolve(result);
+                    })
+                    .catch(error => {
+                        reject(error);
+                    });
+            });
+        } else {
+            return next;
+        }
     }
 }

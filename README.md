@@ -1,15 +1,18 @@
 ## *This is a downgrade from [odata-v4-server](https://github.com/jaystack/odata-v4-server).*
 We need to provide OData V2 metadata and response payload
-Currently working on batch processing.
 Please be advised that this is in alfa status.
 
 Added method parameter decorators:
-@odata.path: OData resource path parsing tree
-@odata.navstep: Current navigation step 
+    * @odata.path: OData resource path parsing tree
+    * @odata.navstep: Current navigation step 
 
 Now controller methods are called with controller instance (not controller class descriptor)
 
-$batch requests implemented, though no callbacks yet for start and end of changset
+**$batch** requests implemented, though no callbacks yet for start and end of *changsets*
+
+OData V2 payload can be switched off via *ODataProcessorOptions* class
+
+## Please see below the original README of JayStack odata-v4-server
 
 # JayStack OData V4 Server
 
