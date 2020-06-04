@@ -1504,10 +1504,10 @@ export class ODataProcessor extends Transform {
                     } else {
                         if (this.options.metadata != ODataMetadataType.none) {
                             if (Edm.isEntityType(elementType, prop)) {
-                                if ((!includes || (includes && !includes[prop]))) {
+                                // if ((!includes || (includes && !includes[prop]))) {
                                     metadata[`${prop}@odata.associationLink`] = `${context["@odata.id"]}/${prop}/$ref`;
                                     metadata[`${prop}@odata.navigationLink`] = `${context["@odata.id"]}/${prop}`;
-                                }
+                                // }
                             }
                         }
                         if (this.options.metadata == ODataMetadataType.full) {
@@ -1821,7 +1821,7 @@ export class ODataProcessor extends Transform {
                             } else if (Buffer.isBuffer(value)) {
                                 value = value.toString("base64");
                             } else if (value instanceof Date) {
-                                value = `\/Date(${value.getTime()})\/`;
+                                value = `\/Date(${value.getMilliseconds()})\/`;
                             } else if (value && typeof value === "object") {
                                 let keys = Object.keys(value);
                                 if (keys.length === 1 && keys[0] === "value") {
