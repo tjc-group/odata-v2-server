@@ -1820,6 +1820,8 @@ export class ODataProcessor extends Transform {
                                 value = value[0];
                             } else if (Buffer.isBuffer(value)) {
                                 value = value.toString("base64");
+                            } else if (value instanceof Date) {
+                                value = `\/Date(${value.getTime()})\/`;
                             } else if (value && typeof value === "object") {
                                 let keys = Object.keys(value);
                                 if (keys.length === 1 && keys[0] === "value") {
