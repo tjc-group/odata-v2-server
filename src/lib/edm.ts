@@ -9,6 +9,7 @@ const EdmProperties:string = "edm:properties";
 const EdmKeyProperties:string = "edm:keyproperties";
 const EdmKeyProperty:string = "edm:keyproperty";
 const EdmForeignKeys:string = "edm:foreignkeys";
+const EdmAssociation: string = "edm:association";
 const EdmPrincipalKeys: string = "edm:principalkeys";
 const EdmDependentKeys: string = "edm:dependentkeys";
 const EdmComputedProperty:string = "edm:computedproperty";
@@ -1093,6 +1094,15 @@ export function getAnnotations(target:Function, targetKey?:string):any[]{
     }catch{
         return Reflect.getOwnMetadata(EdmAnnotations, target, targetKey) || [];
     }
+}
+
+/** Edm.Association decorator for describing association */
+export function Association(property: string) {
+    return Reflect.metadata(EdmAssociation, property);
+}
+
+export function getAssociation(target: any, targetKey: string) {
+    return Reflect.getMetadata(EdmAssociation, target, targetKey) || Reflect.getMetadata(EdmAssociation, target.prototype, targetKey);
 }
 
 /** ?????????? */
