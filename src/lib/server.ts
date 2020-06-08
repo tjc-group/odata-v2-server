@@ -174,7 +174,7 @@ export class ODataServerBase extends Transform {
                                 function buildBatchResponse(boundary, operations): any {
                                     return Object
                                         .keys(operations)
-                                        .sort()
+                                        .sort((a,b) => parseInt(a,10) - parseInt(b, 10))
                                         .map(index => {
                                             let operation = operations[index];
                                             let content = ""
