@@ -1486,13 +1486,13 @@ export class ODataProcessor extends Transform {
 
                 if (!select || (select && select[prop]) || (includes && includes[prop])) {
                     if (isCollection && propValue) {
-                        let value = Array.isArray(propValue) ? propValue : (typeof propValue != "undefined" ? [propValue] : []);
-                        for (let i = 0; i < value.length; i++) {
-                            value[i] = await this.__resolveAsync(type, prop, value[i], entity, converter);
-                        }
                         if (includes && includes[prop]) {
                             await this.__include(includes[prop], (select || {})[prop], context, prop, ctrl, entity, elementType);
                         } else if (typeof type == "function" && !Edm.isTypeDefinition(elementType, prop)) {
+                            let value = Array.isArray(propValue) ? propValue : (typeof propValue != "undefined" ? [propValue] : []);
+                            for (let i = 0; i < value.length; i++) {
+                                value[i] = await this.__resolveAsync(type, prop, value[i], entity, converter);
+                            }
                             for (let i = 0; i < value.length; i++) {
                                 let it = value[i];
                                 if (!it) return it;
@@ -1500,8 +1500,8 @@ export class ODataProcessor extends Transform {
                                 await this.__convertEntity(item, it, type, includes, (select || {})[prop]);
                                 value[i] = item;
                             }
+                            context[prop] = value;
                         }
-                        context[prop] = value;
                     } else {
                         if (this.options.metadata != ODataMetadataType.none) {
                             if (Edm.isEntityType(elementType, prop)) {
@@ -1820,9 +1820,9 @@ export class ODataProcessor extends Transform {
                                 }
                             }
                         } else if (!/\@odata\./.test(property)) {
-                            if (Array.isArray(value) && value.length === 1 && value[0].results) {
+                            if (Array.isArray(value)) {
                                 value = {
-                                    results: value[0].results.map(mapValue)
+                                    results: value.map(mapValue)
                                 };
                             } else if (Buffer.isBuffer(value)) {
                                 value = value.toString("base64");
