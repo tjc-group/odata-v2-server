@@ -78,6 +78,15 @@ interface ResultFunction {
     (err: any, result?: any): void;
 }
 
+export enum ChangeSetEvent {
+    Begin,
+    End
+}
+
+export interface ChangeSetEventHandler {
+    (event: ChangeSetEvent, changeSetKey: string, context: any): void;
+}
+
 /** ODataServer base class to be extended by concrete OData Server data sources */
 export class ODataServerBase extends Transform {
     private static _metadataCache: any
@@ -87,6 +96,7 @@ export class ODataServerBase extends Transform {
     static connector: IODataConnector
     static validator: (odataQuery: string | Token) => null;
     static errorHandler: express.ErrorRequestHandler = ODataErrorHandler;
+    static changeSetEventHandler: ChangeSetEventHandler;
     private serverType: typeof ODataServer
 
 
@@ -110,13 +120,24 @@ export class ODataServerBase extends Transform {
                                 cb = undefined;
                             }
                         }
+
+                        function fireChangeSetEvent(operation, event: ChangeSetEvent) {
+                            if (operation.partType === "changeset" && ODataServerBase.changeSetEventHandler) {
+                                ODataServerBase.changeSetEventHandler(event, operation.boundary, {
+                                    request: req,
+                                    response: res,
+                                    operations: operation.operations
+                                });
+                            }
+                        }
+
                         Object.assign(result, operation, { index: index });
                         if (operation.operations) { // nested batch, can be changeset inside batch
-                            if (operation.partType === "changeset") {
-                            }
+                            fireChangeSetEvent(operation, ChangeSetEvent.Begin);
                             async.mapValuesLimit(operation.operations, 5, iterateOperation, function (error, results) {
                                 invokeCallbackOnce(null, Object.assign({}, operation, { operations: results }));
                             });
+                            fireChangeSetEvent(operation, ChangeSetEvent.End);
                         } else {
 
                             let fakeReq = Object.assign({}, req, {

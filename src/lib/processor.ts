@@ -14,6 +14,7 @@ import * as odata from "./odata";
 import { ResourceNotFoundError, MethodNotAllowedError } from "./error";
 import { ODataServer, ODataHttpContext } from "./server";
 import { IODataResult } from './index';
+import { mapSync } from 'event-stream';
 
 const getODataRoot = function (context: ODataHttpContext) {
     return (context.protocol || "http") + "://" + (context.host || "localhost") + (context.base || "");
@@ -1817,7 +1818,9 @@ export class ODataProcessor extends Transform {
                             }
                         } else if (!/\@odata\./.test(property)) {
                             if (Array.isArray(value) && value.length === 1 && value[0].results) {
-                                value = value[0];
+                                value = {
+                                    results: value[0].results.map(mapValue)
+                                };
                             } else if (Buffer.isBuffer(value)) {
                                 value = value.toString("base64");
                             } else if (value instanceof Date) {
@@ -1827,6 +1830,7 @@ export class ODataProcessor extends Transform {
                                 if (keys.length === 1 && keys[0] === "value") {
                                     value = value.value;
                                 }
+                                value = mapValue(value);
                             }
                             prev[property] = value;
                         }

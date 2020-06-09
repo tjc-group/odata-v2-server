@@ -1,7 +1,7 @@
 import "reflect-metadata";
 import { Token, TokenType } from "@tjc-group/odata-v2-parser/lib/lexer";
 import { ErrorRequestHandler } from "express";
-import { ODataServer } from "./server";
+import { ChangeSetEventHandler, ODataServer } from "./server";
 import { ODataController } from "./controller";
 import { EntityType } from "./edm";
 import { getFunctionParameters, getAllPropertyNames, PropertyDecorator } from "./utils";
@@ -154,7 +154,16 @@ export function error(errorHandler: ErrorRequestHandler) {
   };
 }
 
-/** Class decorator for server that binds the given controller to the server. 
+/** Set error handler
+ * @param errorHandler Error request handler to use
+ */
+export function changeSetEvent(handler: ChangeSetEventHandler) {
+    return function (target: typeof ODataServer) {
+        target.changeSetEventHandler = handler;
+    };
+}
+
+/** Class decorator for server that binds the given controller to the server.
  * @param controller    Controller to be bind to the server.
  * @param isPublic      Is the binding public or not.
  */
