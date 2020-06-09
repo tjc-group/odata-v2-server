@@ -1785,6 +1785,9 @@ export class ODataProcessor extends Transform {
 
     protected __convertPayloadV2(data: any): any {
         function mapValue(item: any): any {
+            if (!item) {
+                return item;
+            }
             return Object.keys(item).reduce((prev: any, property): any => {
                 switch (property) {
                     case "@odata.id": {
