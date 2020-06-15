@@ -8,9 +8,9 @@ Please be advised that this is in alfa status.
 
 * Now controller methods are called with controller instance (not controller class descriptor)
 
-**$batch** requests implemented, though no callbacks yet for start and end of *changsets*
+* **$batch** requests implemented, though no callbacks yet for start and end of *changsets*
 
-OData V2 payload can be switched off via *ODataProcessorOptions* class
+* OData V2 payload can be switched off via *ODataProcessorOptions* class
 
 ## Please see below the original README of JayStack odata-v4-server
 
