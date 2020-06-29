@@ -1,6 +1,6 @@
 {
   "name": "@tjc-group/odata-v2-server",
-  "version": "0.0.63",
+  "version": "0.0.64",
   "description": "OData V2 Server - downgrade from V4 of Jaystack",
   "main": "build/lib/index.js",
   "typings": "build/lib/index",
@@ -77,7 +77,7 @@
   },
   "homepage": "https://github.com/tjc-group/odata-v2-server#readme",
   "dependencies": {
-    "@tjc-group/odata-v2-parser": "^0.0.17",
+    "@tjc-group/odata-v2-parser": "^0.0.18",
     "@tjc-group/odata-v2-service-metadata": "^0.0.8",
     "@tjc-group/odata-v4-metadata": "^0.1.7",
     "@tjc-group/odata-v4-service-document": "^0.0.9",
