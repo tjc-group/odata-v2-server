@@ -619,7 +619,10 @@ export function ODataErrorHandler(err, _, res, next) {
         res.send({
             error: {
                 code: statusCode,
-                message: err.message,
+                message: {
+                    "lang": "en-US",
+                    "value": err.message
+                },
                 stack: process.env.ODATA_V4_DISABLE_STACKTRACE ? undefined : err.stack
             }
         });
