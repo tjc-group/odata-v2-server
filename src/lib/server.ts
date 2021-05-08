@@ -146,7 +146,8 @@ export class ODataServerBase extends Transform {
                                 path: operation.resourcePath,
                                 method: operation.method,
                                 headers: {
-                                    "content-type": operation.contentType
+                                    "content-type": operation.contentType,
+                                    "host": req.headers.host
                                 },
                                 body: operation.payload,
                                 secure: req.secure,
