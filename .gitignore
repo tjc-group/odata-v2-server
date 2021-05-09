@@ -8,3 +8,4 @@ docs
 .nyc_output
 tmp.*
 src/test/error.json
+.npmrc
